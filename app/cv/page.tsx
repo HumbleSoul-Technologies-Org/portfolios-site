@@ -16,76 +16,89 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 
 export const metadata: Metadata = {
-  title: "CV | Your Name",
+  title: "CV | Kisibo Jonathan",
   description: "View my professional resume, experience, education, and skills.",
 }
 
 const experience = [
   {
-    title: "Senior Full-Stack Developer",
-    company: "Tech Company",
-    location: "San Francisco, CA",
-    period: "2024 - Present",
-    description: "Lead developer for enterprise applications, responsible for architecture decisions and mentoring junior developers.",
+    title: " Full-Stack Developer",
+    company: "Hanli Company Uganda LTD",
+    location: "Kampala, Uganda",
+    period: "2025 - Present",
+    description: "Developing and maintaining web applications to enhance the company's online presence and customer engagement.",
     achievements: [
-      "Led development of a microservices architecture serving 1M+ users",
-      "Reduced deployment time by 60% through CI/CD optimization",
-      "Mentored 5 junior developers, improving team velocity by 40%",
+      "Creted a responsive website that increased user engagement by 30%",
+      "managed the website content and ensured regular updates",
+      "Linked the website to social media platforms to boost marketing efforts",
     ],
   },
   {
     title: "Full-Stack Developer",
-    company: "Digital Agency",
-    location: "Remote",
-    period: "2022 - 2024",
-    description: "Developed custom web and mobile applications for clients across various industries.",
+    company: "Business Acceleration Group (BAG)",
+    location: "Kampala, Uganda",
+    period: "2026",
+    description: "Built custom responsive website for the company to enhance their online presence and customer engagement.",
     achievements: [
-      "Delivered 15+ projects on time and within budget",
-      "Built e-commerce platform processing $2M+ in annual transactions",
-      "Implemented automated testing, reducing bugs by 70%",
+      "Developed a user-friendly website that improved customer interaction",
+      "Integrated e-commerce features to facilitate online transactions",
+      "Optimized website performance for faster load times",
     ],
   },
   {
-    title: "Junior Developer",
-    company: "Startup Inc.",
-    location: "New York, NY",
-    period: "2020 - 2022",
-    description: "Contributed to building features for a SaaS product and learned best practices from experienced developers.",
+    title: "Full-Stack Developer",
+    company: "AIO Solars LTD",
+    location: "Kampala, Uganda",
+    period: "2026",
+    description: "Built custom responsive website for the company to enhance their online presence and customer engagement.",
     achievements: [
-      "Developed key features used by 10,000+ daily active users",
-      "Contributed to open-source projects used by the company",
-      "Won 'Rising Star' award for exceptional performance",
+      "Designed and implemented a modern website layout",
+      "Ensured mobile responsiveness for better accessibility",
+      "Collaborated with the marketing team to align website content with brand messaging",
     ],
   },
 ]
 
 const education = [
   {
-    degree: "Bachelor of Science in Information Technology",
-    school: "University of Technology",
-    period: "2016 - 2020",
-    description: "Specialized in Web Development and Software Engineering. Graduated with Honors.",
+    degree: "Bachelors degree in Information Technology",
+    school: "Kampala International University",
+    period: "2021 - 2024",
+    description: "Specialized in IT- support, Web Development and Networking. Graduated with Honors.",
+  },
+  {
+    High: "Uganda Advanced Certificate of Education (UACE)",
+    school: "Mukono King's High School",
+    period: "2018 - 2019",
+     
+  },
+  {
+    High: "Uganda  Certificate of Education (UCE)",
+    school: "Namiryango- Mixed Secondary School",
+    period: "2016 - 2017",
+     
   },
 ]
 
 const skills = {
-  frontend: ["React", "Next.js", "TypeScript", "Tailwind CSS", "Vue.js", "HTML/CSS"],
-  backend: ["Node.js", "Python", "Express", "Django", "GraphQL", "REST APIs"],
-  database: ["PostgreSQL", "MongoDB", "Redis", "Prisma", "MySQL"],
-  tools: ["Git", "Docker", "AWS", "Vercel", "CI/CD", "Jest"],
-  soft: ["Problem Solving", "Communication", "Team Leadership", "Agile/Scrum"],
+  frontend: ["React", "Next.js", "TypeScript", "Tailwind CSS", "W3-CSS", "HTML/CSS"],
+  backend: ["Node.js","Express", "REST APIs"],
+  database: ["PostgreSQL", "MongoDB", "MySQL"],
+  tools: ["Git" , "Vercel", "Render", ],
+  soft: ["Problem Solving", "Communication", "Time management", "Teamwork"],
 }
 
 const certifications = [
-  { name: "AWS Certified Developer", issuer: "Amazon Web Services", year: "2024" },
-  { name: "Google Cloud Professional", issuer: "Google", year: "2023" },
-  { name: "Meta Front-End Developer", issuer: "Meta", year: "2022" },
+  { name: "Programming in Python", issuer: "Makerere University", year: "2024" },
+  { name: "Cybersecurity Fundamentals", issuer: "CISCO", year: "2024" },
+  { name: "Networking Fundamentals", issuer: "CISCO", year: "2024" },
 ]
 
 const languages = [
   { language: "English", level: "Native" },
-  { language: "Spanish", level: "Professional" },
-  { language: "French", level: "Basic" },
+  { language: "Luganda", level: "Professional" },
+  { language: "Lugisu", level: "Basic" },
+  { language: "Lusoga", level: "Basic" },
 ]
 
 export default function CVPage() {
@@ -96,21 +109,21 @@ export default function CVPage() {
         <header className="mb-12 flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-4xl font-bold tracking-tight text-foreground">
-              Your Name
+              Kisibo Jonathan
             </h1>
             <p className="mt-2 text-xl text-accent">Full-Stack Developer</p>
             <div className="mt-4 flex flex-wrap gap-4 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
                 <MapPin className="h-4 w-4" />
-                San Francisco, CA
+                Kampala, Uganda
               </span>
               <span className="flex items-center gap-1">
                 <Mail className="h-4 w-4" />
-                hello@example.com
+                kisibojonathan150@gmail.com
               </span>
               <span className="flex items-center gap-1">
                 <Phone className="h-4 w-4" />
-                +1 (555) 123-4567
+                +256 741 745 165
               </span>
             </div>
           </div>
@@ -129,10 +142,10 @@ export default function CVPage() {
             Professional Summary
           </h2>
           <p className="text-muted-foreground">
-            Full-stack developer with 5+ years of experience building scalable web applications 
+            Full-stack developer with 3+ years of experience building scalable web applications 
             and mobile apps. Specialized in React, Node.js, and cloud technologies. Passionate 
             about clean code, user experience, and delivering high-quality products that make 
-            a real impact. Proven track record of leading projects and mentoring teams.
+            a real impact. Proven track record of leading projects and mentoring juniors.
           </p>
         </section>
 
@@ -157,7 +170,7 @@ export default function CVPage() {
                 <ul className="mt-4 space-y-2">
                   {job.achievements.map((achievement) => (
                     <li key={achievement} className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-accent" />
+                      <span className="mt-1.5 h-1.5 w-1.5  shrink-0 rounded-full bg-accent" />
                       {achievement}
                     </li>
                   ))}
@@ -176,7 +189,7 @@ export default function CVPage() {
           <div className="rounded-xl border border-border/50 bg-card p-6">
             <div className="grid gap-6 sm:grid-cols-2">
               <div>
-                <h3 className="mb-3 text-sm font-semibold text-foreground">Frontend</h3>
+                <h3 className="mb-3 text-sm font-semibold text-accent">Frontend</h3>
                 <div className="flex flex-wrap gap-2">
                   {skills.frontend.map((skill) => (
                     <Badge key={skill} variant="secondary">{skill}</Badge>
@@ -184,7 +197,7 @@ export default function CVPage() {
                 </div>
               </div>
               <div>
-                <h3 className="mb-3 text-sm font-semibold text-foreground">Backend</h3>
+                <h3 className="mb-3 text-sm font-semibold text-accent">Backend</h3>
                 <div className="flex flex-wrap gap-2">
                   {skills.backend.map((skill) => (
                     <Badge key={skill} variant="secondary">{skill}</Badge>
@@ -192,7 +205,7 @@ export default function CVPage() {
                 </div>
               </div>
               <div>
-                <h3 className="mb-3 text-sm font-semibold text-foreground">Database</h3>
+                <h3 className="mb-3 text-sm font-semibold text-accent">Database</h3>
                 <div className="flex flex-wrap gap-2">
                   {skills.database.map((skill) => (
                     <Badge key={skill} variant="secondary">{skill}</Badge>
@@ -200,9 +213,17 @@ export default function CVPage() {
                 </div>
               </div>
               <div>
-                <h3 className="mb-3 text-sm font-semibold text-foreground">Tools & DevOps</h3>
+                <h3 className="mb-3 text-sm font-semibold text-accent">Tools & DevOps</h3>
                 <div className="flex flex-wrap gap-2">
                   {skills.tools.map((skill) => (
+                    <Badge key={skill} variant="secondary">{skill}</Badge>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <h3 className="mb-3 text-sm font-semibold text-accent">Soft Skills</h3>
+                <div className="flex flex-wrap gap-2">
+                  {skills.soft.map((skill) => (
                     <Badge key={skill} variant="secondary">{skill}</Badge>
                   ))}
                 </div>

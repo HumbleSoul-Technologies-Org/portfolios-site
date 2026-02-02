@@ -3,7 +3,7 @@ import { ProjectsGrid } from "@/components/projects/projects-grid"
 import { projects, categories } from "@/lib/projects-data"
 
 export const metadata: Metadata = {
-  title: "Projects | Your Name",
+  title: "Projects | Kisibo Jonathan",
   description: "Explore my portfolio of web development, mobile apps, and software projects.",
 }
 

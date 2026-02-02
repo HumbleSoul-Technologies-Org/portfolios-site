@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 
 export const metadata: Metadata = {
-  title: "Services | Your Name",
+  title: "Services | Kisibo Jonathan",
   description: "Professional web development, mobile app development, and software consulting services.",
 }
 
@@ -34,7 +34,7 @@ const services = [
       "CMS integration",
       "E-commerce solutions",
     ],
-    price: "From $3,000",
+    price: "From $208.43",
   },
   {
     icon: Smartphone,
@@ -47,7 +47,7 @@ const services = [
       "Push notifications",
       "Offline functionality",
     ],
-    price: "From $5,000",
+    price: "From $1500",
   },
   {
     icon: Server,
@@ -60,7 +60,49 @@ const services = [
       "Cloud deployment",
       "Third-party integrations",
     ],
-    price: "From $2,500",
+    price: "From $600",
+  },
+]
+
+const managementSystems = [
+  {
+    icon: Laptop,
+    title: "Sales Management System",
+    description: "Comprehensive solution for managing sales pipelines, customer relationships, and revenue tracking.",
+    features: [
+      "Sales pipeline tracking",
+      "Customer relationship management",
+      "Deal management",
+      "Sales analytics & reporting",
+      "Quote & invoice generation",
+    ],
+    price: "From $1200",
+  },
+  {
+    icon: Database,
+    title: "Business Management System",
+    description: "All-in-one platform for managing operations, finances, and business processes.",
+    features: [
+      "Financial management",
+      "Expense tracking",
+      "Workflow automation",
+      "Multi-department integration",
+      "Real-time dashboards",
+    ],
+    price: "From $1400",
+  },
+  {
+    icon: Wrench,
+    title: "Inventory Management Systems",
+    description: "Real-time inventory tracking and supply chain management solutions.",
+    features: [
+      "Stock tracking",
+      "Supplier management",
+      "Automated alerts",
+      "Analytics & reporting",
+      "Barcode integration",
+    ],
+    price: "From $950",
   },
 ]
 
@@ -82,8 +124,8 @@ const additionalServices = [
   },
   {
     icon: Rocket,
-    title: "Performance Optimization",
-    description: "Speed up your existing applications and improve user experience.",
+    title: "Search Engine Optimization",
+    description: "Improve your online visibility and drive organic traffic to your site.",
   },
   {
     icon: Code2,
@@ -161,6 +203,40 @@ export default function ServicesPage() {
               </CardContent>
               <CardFooter className="flex flex-col items-start gap-4 border-t border-border/50 pt-6">
                 <p className="text-2xl font-bold text-foreground">{service.price}</p>
+                <Button asChild className="w-full gap-2">
+                  <Link href="/contact">
+                    Get Started
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+
+        {/* Management Systems */}
+        <div className="mb-24 grid gap-8 lg:grid-cols-3">
+          {managementSystems.map((system) => (
+            <Card key={system.title} className="flex flex-col border-border/50 transition-all hover:border-accent/30 hover:shadow-lg">
+              <CardHeader>
+                <div className="mb-4 inline-flex w-fit rounded-lg bg-accent/10 p-3 text-accent">
+                  <system.icon className="h-6 w-6" />
+                </div>
+                <CardTitle className="text-xl">{system.title}</CardTitle>
+                <CardDescription>{system.description}</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1">
+                <ul className="space-y-3">
+                  {system.features.map((feature) => (
+                    <li key={feature} className="flex items-center gap-3 text-sm text-muted-foreground">
+                      <Check className="h-4 w-4 text-accent" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+              <CardFooter className="flex flex-col items-start gap-4 border-t border-border/50 pt-6">
+                <p className="text-2xl font-bold text-foreground">{system.price}</p>
                 <Button asChild className="w-full gap-2">
                   <Link href="/contact">
                     Get Started

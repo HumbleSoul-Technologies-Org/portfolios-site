@@ -1,10 +1,10 @@
 import { Metadata } from "next"
 import Link from "next/link"
-import { ArrowRight, Code2, Coffee, Globe, Heart, Lightbulb, MapPin, Rocket } from "lucide-react"
+import { ArrowRight, Code2, Coffee, Gamepad, Gamepad2, Globe, Heart, Lightbulb, MapPin, Rocket } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export const metadata: Metadata = {
-  title: "About | Your Name",
+  title: "About | Kisibo Jonathan",
   description: "Learn more about my background, experience, and what drives me as a developer.",
 }
 
@@ -32,30 +32,26 @@ const values = [
 ]
 
 const timeline = [
+   
   {
-    year: "2024 - Present",
-    title: "Senior Full-Stack Developer",
-    company: "Tech Company",
-    description: "Leading development of enterprise applications, mentoring junior developers, and driving technical decisions.",
-  },
-  {
-    year: "2022 - 2024",
+    year: "2025",
     title: "Full-Stack Developer",
-    company: "Digital Agency",
-    description: "Built custom web applications and mobile apps for various clients across different industries.",
+    company: "Hanli Company Uganda LTD",
+    description: "Built custom responsive website for the company to enhance their online presence and customer engagement.",
   },
   {
-    year: "2020 - 2022",
-    title: "Junior Developer",
-    company: "Startup Inc.",
-    description: "Started my professional journey building features for a SaaS product and learning from experienced developers.",
+    year: "2026",
+    title: "Full-Stack Developer",
+    company: "Business Acceleration Group (BAG)",
+    description: "Built custom responsive website for the company to enhance their online presence and customer engagement.",
   },
   {
-    year: "2020",
-    title: "Bachelor's in IT",
-    company: "University",
-    description: "Graduated with honors, specializing in web development and software engineering.",
+    year: "2026",
+    title: "Full-Stack Developer",
+    company: "AIO Solars LTD",
+    description: "Built custom responsive website for the company to enhance their online presence and customer engagement.",
   },
+   
 ]
 
 export default function AboutPage() {
@@ -67,8 +63,8 @@ export default function AboutPage() {
           {/* Photo Placeholder */}
           <div className="relative">
             <div className="aspect-square overflow-hidden rounded-2xl bg-muted">
-              <div className="flex h-full items-center justify-center text-muted-foreground">
-                <span>Your Photo</span>
+              <div className="flex w-auto h-full items-center justify-center text-muted-foreground">
+                <img src="/profile-pic.jpg" className="w-full h-full object-contain" alt="Profile Photo" />
               </div>
             </div>
             {/* Decorative elements */}
@@ -81,39 +77,40 @@ export default function AboutPage() {
               About Me
             </p>
             <h1 className="mt-2 text-balance text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-              Hey, {"I'm"} Your Name
+              Hey, {"I'm"}  Jonathan
             </h1>
             <div className="mt-6 space-y-4 text-muted-foreground">
               <p>
-                {"I'm"} a full-stack developer with a passion for creating digital experiences 
-                that make a difference. With over 5 years of experience in the industry, 
+                {"I'm"} a full-stack developer (MERN) with a passion for creating digital experiences 
+                that make a difference. With over 3 years of experience in the industry, 
                 {"I've"} had the opportunity to work on diverse projects ranging from 
                 startups to enterprise applications.
               </p>
+               
               <p>
-                My journey into tech started with a curiosity about how things work on the 
-                web. That curiosity has evolved into a career where I get to solve complex 
-                problems and build products that help businesses grow.
+                Besides developing websites, {"I'm"} a skilled IT techinicain with expertise in
+               computer hardware and software installations and configurations, Linux, computer mantainance, network setup and configuration, and system maintenance. 
+                This technical background enhances my ability to build robust and efficient applications and systems.
               </p>
+
               <p>
-                When {"I'm"} not coding, you can find me exploring new technologies, 
-                contributing to open source, or enjoying a good cup of coffee while 
-                reading about the latest in tech.
+                 My good communication  and collaborative skills approach have allowed me to work effectively
+                 with cross-functional teams, ensuring that projects are delivered on time and meet client expectations.
               </p>
             </div>
 
             <div className="mt-8 flex flex-wrap items-center gap-6 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-accent" />
-                <span>San Francisco, CA</span>
+                <span>Kampala, Uganda</span>
               </div>
               <div className="flex items-center gap-2">
                 <Globe className="h-4 w-4 text-accent" />
-                <span>Open to Remote</span>
+                <span>Open to Project Collaborations</span>
               </div>
               <div className="flex items-center gap-2">
-                <Coffee className="h-4 w-4 text-accent" />
-                <span>Coffee Enthusiast</span>
+                <Gamepad2 className="h-4 w-4 text-accent" />
+                <span>Gaming Enthusiast</span>
               </div>
             </div>
 

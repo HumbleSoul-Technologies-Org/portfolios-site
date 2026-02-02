@@ -3,7 +3,7 @@ import { Calendar, Clock, Github, Linkedin, Mail, MapPin, MessageSquare, Twitter
 import { ContactForm } from "@/components/contact/contact-form"
 
 export const metadata: Metadata = {
-  title: "Contact | Your Name",
+  title: "Contact | Kisibo Jonathan",
   description: "Get in touch for project inquiries, collaborations, or just to say hello.",
 }
 
@@ -11,13 +11,13 @@ const contactInfo = [
   {
     icon: Mail,
     label: "Email",
-    value: "hello@example.com",
-    href: "mailto:hello@example.com",
+    value: "kisibojonathan150@gmail.com",
+    href: "mailto:kisibojonathan150@gmail.com",
   },
   {
     icon: MapPin,
     label: "Location",
-    value: "San Francisco, CA",
+    value: "Kampala, Uganda",
   },
   {
     icon: Clock,
@@ -32,9 +32,9 @@ const contactInfo = [
 ]
 
 const socialLinks = [
-  { icon: Github, label: "GitHub", href: "https://github.com" },
+  { icon: Github, label: "GitHub", href: "https://github.com/GamingHazard/" },
   { icon: Linkedin, label: "LinkedIn", href: "https://linkedin.com" },
-  { icon: Twitter, label: "Twitter", href: "https://twitter.com" },
+  // { icon: Twitter, label: "Twitter", href: "https://twitter.com" },
 ]
 
 const faqs = [

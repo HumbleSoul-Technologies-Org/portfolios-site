@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   return {
-    title: `${project.title} | Your Name`,
+    title: `${project.title} | Kisibo Jonathan`,
     description: project.description,
   }
 }

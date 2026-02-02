@@ -25,12 +25,12 @@ const skills = [
     description: "Structuring data for optimal performance and maintainability.",
     technologies: ["PostgreSQL", "MongoDB", "SQL"],
   },
-  {
-    icon: Palette,
-    title: "UI/UX Design",
-    description: "Crafting intuitive interfaces with attention to user experience.",
-    technologies: ["Figma", "Design Systems", "Prototyping", "User Research"],
-  },
+  // {
+  //   icon: Palette,
+  //   title: "UI/UX Design",
+  //   description: "Crafting intuitive interfaces with attention to user experience.",
+  //   technologies: ["Figma", "Design Systems", "Prototyping", "User Research"],
+  // },
   {
     icon: Megaphone,
     title: "Social Media Marketing",
