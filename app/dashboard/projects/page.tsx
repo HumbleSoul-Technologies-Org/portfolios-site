@@ -2,7 +2,7 @@
 
 import React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { 
@@ -49,22 +49,29 @@ import { projects as initialProjects, type Project, categories } from "@/lib/pro
 import { useProjects } from "@/lib/hooks";
 // import { Project } from "@/lib/projects-data"
 import { apiRequest } from "@/lib/queryClient"
+import { File } from "buffer"
+import { toast } from "@/hooks/use-toast"
+import axios from "axios"
+import { useQuery } from "@tanstack/react-query"
 
 export default function ProjectsManagementPage() {
-  const [projects, setProjects] = useState<Project[]>(initialProjects)
+  const [projects, setProjects] = useState<any[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [editingProject, setEditingProject] = useState<Project | null>(null)
   const [deleteProject, setDeleteProject] = useState<Project | null>(null)
 
-  // const { data: remoteProjects } = useProjects();
+  const { data: Projects } = useQuery<any>({
+    queryKey: ['projects','all'],
+  })
 
-  React.useEffect(() => {
-    if (projects && Array.isArray(projects)) {
-      setProjects(projects as Project[]);
+ 
+  useEffect(() => {
+    if (Projects) {
+      setProjects((Projects as any).data as Project[]);
     }
-  }, [projects]);
+  }, [Projects]);
 
   const filteredProjects = projects.filter((project) => {
     const matchesSearch = project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -221,14 +228,14 @@ export default function ProjectsManagementPage() {
                 {project.description}
               </p>
               <div className="flex flex-wrap gap-1">
-                {project.tags.slice(0, 3).map((tag) => (
+                {project?.technologies?.slice(0, 3).map((tag:any) => (
                   <Badge key={tag} variant="outline" className="text-xs">
                     {tag}
                   </Badge>
                 ))}
-                {project.tags.length > 3 && (
+                {project.technologies.length > 3 && (
                   <Badge variant="outline" className="text-xs">
-                    +{project.tags.length - 3}
+                    +{project.technologies.length - 3}
                   </Badge>
                 )}
               </div>
@@ -305,7 +312,10 @@ function ProjectDialog({
   const [testimonialRole, setTestimonialRole] = useState<string>(
     project?.testimonial?.role ?? ""
   )
+  const [selectedImage, setSelectedImage] = useState<File | any>(null)
+
   const [loading, setLoading] = useState<boolean>(false)
+  const [isUploading, setIsUploading] = useState<boolean>(false)
 
   // Reset form when opening or when editing a new project
   React.useEffect(() => {
@@ -318,7 +328,7 @@ function ProjectDialog({
     setImagePreview(project?.image ?? "")
   }, [project, open])
 
-  const handleImageUpload = (file: File) => {
+  const handleImageUpload = (file: any) => {
     const reader = new FileReader()
     reader.onload = (e) => {
       const result = e.target?.result as string
@@ -326,6 +336,8 @@ function ProjectDialog({
       setFormData({ ...formData, image: result })
     }
     reader.readAsDataURL(file)
+    setSelectedImage(file)
+    
   }
   
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -336,6 +348,29 @@ function ProjectDialog({
       handleImageUpload(files[0])
     }
   }
+
+  const uploadFileToServer = async (file: any): Promise<string | null> => {
+    if (!file) return null;
+    setIsUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("image", file);
+      const base = process.env.NEXT_PUBLIC_API_URL || "";
+      const url = `${base}/projects/upload/image`;
+      const resp = await axios.post(url, fd);
+      return resp.data || null;
+    } catch (err) {
+      console.error("Error uploading image:", err);
+      toast({
+        title: "Image Upload Failed",
+        description: "There was an error uploading the image. Please try again.",
+        variant: "destructive",
+      });
+      return null;
+    } finally {
+      setIsUploading(false);
+    }
+  };
   
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
@@ -344,29 +379,43 @@ function ProjectDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
+    // setLoading(true)
+     const imageUrl = await uploadFileToServer(selectedImage);
     try {
-      const id = project?.id || formData.title?.toLowerCase().replace(/\s+/g, "-") || ""
-       const results = resultsInput.split(/\n/).map((r) => r.trim()).filter(Boolean)
-       const testimonial = {
-         quote: testimonialQuote,
-         author: testimonialAuthor,
-         role: testimonialRole,
-       }
 
-      await onSave({
-         ...formData,
-         id,
-         tags: tagsInput.split(",").map((t) => t.trim()).filter(Boolean),
-         results,
-         testimonial,
-       } as Project)
+      const payload: any = {
+        ...formData,
+        tags: tagsInput.split(",").map(tag => tag.trim()).filter(tag => tag),
+        results: resultsInput.split("\n").map(result => result.trim()).filter(result => result),
+        testimonial: {
+          quote: testimonialQuote,
+          author: testimonialAuthor,
+          role: testimonialRole,
+        },
+        image: imageUrl || formData.image,
+      }
+      const res = await apiRequest("POST", '/projects/create', payload)
+      
+      if (res.ok) {
+        toast({
+          title: "Success",
+          description: `Project ${project ? "updated" : "added"} successfully.`,
+        })
+        project
+      }
+      
+       
     } catch (error) {
       console.error("Error submitting form:", error)
+      toast({
+        title: "Error",
+        description: "Failed to save project. Please try again.",
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }
-   }
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -380,13 +429,37 @@ function ProjectDialog({
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Image Preview */}
           {imagePreview && (
-            <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
+            <div className="relative aspect-video bg-muted rounded-lg overflow-hidden group">
               <Image
                 src={imagePreview}
                 alt="Project preview"
                 fill
                 className="object-cover"
               />
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <input
+                  type="file"
+                  id="imageChangeUpload"
+                  accept="image/*"
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) {
+                      handleImageUpload(e.target.files[0])
+                    }
+                  }}
+                  className="hidden"
+                />
+                <label htmlFor="imageChangeUpload">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => document.getElementById("imageChangeUpload")?.click()}
+                  >
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Change Image
+                  </Button>
+                </label>
+              </div>
             </div>
           )}
           
@@ -423,7 +496,6 @@ function ProjectDialog({
                 id="title"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                required
               />
             </div>
             <div className="space-y-2">
@@ -455,7 +527,6 @@ function ProjectDialog({
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={2}
-              required
             />
           </div>
 
@@ -605,7 +676,7 @@ function ProjectDialog({
                Cancel
              </Button>
              <Button type="submit">
-               {project ? loading ?<span className="flex items-center gap-2"><Loader className="w-4 h-4 animate-spin" /> Saving Changes...</span> :"Save Changes": loading   ? <span className="flex items-center gap-2"><Loader className="w-4 h-4 animate-spin" /> Adding Project...</span> :<span className="flex items-center gap-2"><Plus className="w-4 h-4" /> Add Project</span>}
+               {project ? (isUploading || loading) ? <span className="flex items-center gap-2"><Loader className="w-4 h-4 animate-spin" /> Saving Changes...</span> : "Save Changes" : (isUploading || loading) ? <span className="flex items-center gap-2"><Loader className="w-4 h-4 animate-spin" /> Adding Project...</span> : <span className="flex items-center gap-2"><Plus className="w-4 h-4" /> Add Project</span>}
              </Button>
            </DialogFooter>
          </form>

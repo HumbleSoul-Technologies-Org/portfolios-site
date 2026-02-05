@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { Inter, JetBrains_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { ThemeProvider } from '@/components/theme-provider'
+import QueryProvider from '@/components/query-provider'
 import { AuthProvider } from '@/lib/useAuth'
 import { Navigation } from '@/components/navigation'
 import { Footer } from '@/components/footer'
@@ -50,13 +51,15 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <AuthProvider>
-            <Navigation />
-            <main className="min-h-screen">
-              {children}
-            </main>
-            <Footer />
-          </AuthProvider>
+          <QueryProvider>
+            <AuthProvider>
+              <Navigation />
+              <main className="min-h-screen">
+                {children}
+              </main>
+              <Footer />
+            </AuthProvider>
+          </QueryProvider>
         </ThemeProvider>
         <Analytics />
       </body>
