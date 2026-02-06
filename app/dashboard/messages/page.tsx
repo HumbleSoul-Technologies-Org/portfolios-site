@@ -17,7 +17,8 @@ import {
   Building,
   DollarSign,
   Calendar,
-  ArchiveRestore
+  ArchiveRestore,
+  SendHorizonal
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -57,6 +58,19 @@ interface Message {
   read: boolean
   starred: boolean
   archived: boolean
+  reply?: {
+    reply: string
+    date?: string
+  }
+}
+
+interface Reply {
+  _id: string
+  messageId: string
+  senderName: string
+  senderEmail: string
+  text: string
+  createdAt: string
 }
 
 const initialMessages: Message[] = [
@@ -152,6 +166,9 @@ export default function MessagesPage() {
   const [deleteDialog, setDeleteDialog] = useState<Message | null>(null)
   const [replyDialog, setReplyDialog] = useState<Message | null>(null)
   const [replyText, setReplyText] = useState("")
+  const [sending, setSending] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [replies, setReplies] = useState<Reply[]>([])
 
   const { data:allMessages, isLoading, error } = useQuery<any>({
     queryKey: ["contact","messages","all"],
@@ -211,6 +228,21 @@ export default function MessagesPage() {
     }).format(date)
   }
 
+  function formatDateLong(dateStr: string) {
+    const parsed = Date.parse(dateStr)
+    if (isNaN(parsed)) return dateStr
+    const date = new Date(parsed)
+    return new Intl.DateTimeFormat(undefined, {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      second: "2-digit",
+    }).format(date)
+  }
+
   const handleMarkAsRead = async (id: string) => {
     try {
       await apiRequest("POST", `/contact/message/read/${id}`)
@@ -250,9 +282,7 @@ export default function MessagesPage() {
         description: "Message archived.",
       })
     } catch (error) {
-      console.log('====================================');
-      console.log(error);
-      console.log('====================================');
+      
       toast({
         title: "Error",
         description: "Failed to archive message. Please try again.",
@@ -261,20 +291,62 @@ export default function MessagesPage() {
     }
   }
 
-  const handleDelete = () => {
-    if (deleteDialog) {
-      setMessages(messages.filter(m => m._id !== deleteDialog._id))
-      if (selectedMessage?._id === deleteDialog._id) setSelectedMessage(null)
+  const handleDelete = async (id:string) => {
+    try {
+      setIsDeleting(true)
+      await apiRequest("POST", `/contact/delete/message/${id}`)
+      setMessages(messages.filter(m => m._id !== id))
+      if (selectedMessage?._id === id) setSelectedMessage(null)
       setDeleteDialog(null)
+      toast({
+        title: "Success",
+        description: "Message deleted successfully.",
+      })
+    } catch (error) {
+      console.log('====================================' )
+      console.log(error)
+      console.log('====================================' )
+      toast({
+        title: "Error",
+        description: "Failed to delete message. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsDeleting(false)
     }
   }
 
   const handleSelectMessage = (message: Message) => {
     setSelectedMessage(message)
+    setReplies([])
     if (!message.read) {
       handleMarkAsRead(message._id)
     }
   }
+
+  const handleReply = async (id: string) => {
+    try {
+      setSending(true)
+
+      const data = {
+        reply: replyText,
+        to: selectedMessage?.email,
+        from:selectedMessage?.name,
+      }
+      await apiRequest("POST", `/contact/message/reply/${id}`, data)
+      setSelectedMessage(m => m && m._id === id ? { ...m, reply: { reply: replyText, senderName: "Me", senderEmail: m.email } } : m)
+      toast({
+        title: "Success",
+        description: "Reply sent successfully.",
+      })
+      setReplyText("")
+      setReplyDialog(null)
+    } catch (error) {
+       
+    } finally { 
+      setSending(false)
+    }
+   }
 
   return (
     <div className="flex h-[calc(100vh-4rem)] lg:h-screen">
@@ -419,7 +491,7 @@ export default function MessagesPage() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     
-                    <DropdownMenuItem className="hover:text-white" onClick={() => handleArchive(selectedMessage._id)}>
+                    <DropdownMenuItem onClick={() => handleArchive(selectedMessage._id)}>
                      {selectedMessage.archived ? (<><ArchiveRestore className="h-4 w-4 mr-2" /> Unarchive</>) : (<><Archive className="h-4 w-4 mr-2" /> Archive</>)}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
@@ -493,25 +565,29 @@ export default function MessagesPage() {
                   {selectedMessage.message}
                 </p>
               </div>
+
+              {/* Replies Section */}
+             
             </div>
 
             {/* Quick Reply */}
             <div className="p-4 border-t border-border">
-              <div className="flex gap-2">
-                <Input 
-                  placeholder="Write a quick reply..." 
-                  className="flex-1"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      setReplyDialog(selectedMessage)
-                    }
-                  }}
-                />
-                <Button onClick={() => setReplyDialog(selectedMessage)}>
-                  <Reply className="h-4 w-4 mr-2" />
-                  Reply
-                </Button>
-              </div>
+                 {/* Replies Section */}
+              {!!selectedMessage.reply  && (
+                <div className="mb-6 pb-6 border-b border-border">
+                 <span className="text-sm text-muted-foreground font-semibold mb-4">Previous Reply:</span>
+                  <span
+                    className="text-sm text-muted-foreground font-semibold mb-4"
+                    title={formatDateLong(selectedMessage.reply?.date || "")}
+                    aria-label={formatDateLong(selectedMessage.reply?.date || "")}
+                  >
+                    {formatDate(selectedMessage.reply?.date || "")}
+                  </span>
+                  <div className="space-y-4 text-sm">
+                    {selectedMessage.reply.reply}
+                  </div>
+                </div>
+              )}
             </div>
           </>
         ) : (
@@ -547,12 +623,11 @@ export default function MessagesPage() {
             <Button variant="outline" onClick={() => { setReplyDialog(null); setReplyText("") }}>
               Cancel
             </Button>
-            <Button onClick={() => {
-              // In a real app, this would send the email
-              setReplyDialog(null)
-              setReplyText("")
+            <Button disabled={sending} onClick={() => {
+              
+              handleReply(replyDialog!._id)
             }}>
-              Send Reply
+             {sending ?  <>Sending...<SendHorizonal className="h-4 w-4 ml-2 animate-bounce" /></> : "Send Reply"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -571,8 +646,15 @@ export default function MessagesPage() {
             <Button variant="outline" onClick={() => setDeleteDialog(null)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              Delete
+            <Button 
+              disabled={isDeleting}
+              className="cursor-pointer  hover:bg-red-600 hover:text-white" 
+              variant="destructive" 
+              onClick={() => {
+                handleDelete(deleteDialog!._id)
+              }}
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>

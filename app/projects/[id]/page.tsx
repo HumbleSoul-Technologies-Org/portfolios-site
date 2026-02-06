@@ -13,7 +13,7 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params
-  const project = projects.find((p) => p.id === id)
+  const project = projects.find((p) => p._id === id)
   
   if (!project) {
     return { title: "Project Not Found" }
@@ -27,13 +27,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export function generateStaticParams() {
   return projects.map((project) => ({
-    id: project.id,
+    id: project._id,
   }))
 }
 
 export default async function ProjectPage({ params }: PageProps) {
   const { id } = await params
-  const project = projects.find((p) => p.id === id)
+  const project = projects.find((p) => p._id === id)
 
   if (!project) {
     notFound()
