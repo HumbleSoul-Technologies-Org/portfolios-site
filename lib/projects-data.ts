@@ -1,9 +1,9 @@
 export interface Project {
-  id: string
+  _id: string
   title: string
   description: string
   longDescription: string
-  image: string
+  image: any
   tags: string[]
   category: "web" | "mobile" | "software"
   liveUrl?: string
@@ -24,7 +24,7 @@ export interface Project {
 
 export const projects: Project[] = [
   {
-    id: "ecommerce-platform",
+    _id: "ecommerce-platform",
     title: "E-Commerce Platform",
     description: "A full-featured online store with inventory management, payment processing, and real-time analytics dashboard.",
     longDescription: "Built a comprehensive e-commerce solution for a growing retail business, featuring a modern storefront, admin dashboard, and integrated analytics. The platform handles thousands of daily transactions with 99.9% uptime.",
@@ -52,7 +52,7 @@ export const projects: Project[] = [
     }
   },
   {
-    id: "task-management-app",
+    _id: "task-management-app",
     title: "Task Management App",
     description: "Collaborative project management tool with real-time updates, team workspaces, and automated workflows.",
     longDescription: "Developed a real-time collaborative task management application that helps teams organize work, track progress, and automate repetitive workflows.",
@@ -75,7 +75,7 @@ export const projects: Project[] = [
     ]
   },
   {
-    id: "healthcare-dashboard",
+    _id: "healthcare-dashboard",
     title: "Healthcare Dashboard",
     description: "Patient management system with appointment scheduling, medical records, and analytics for healthcare providers.",
     longDescription: "Created a HIPAA-compliant healthcare management system that streamlines patient care, from appointment booking to medical record management.",
@@ -102,7 +102,7 @@ export const projects: Project[] = [
     }
   },
   {
-    id: "fitness-mobile-app",
+    _id: "fitness-mobile-app",
     title: "Fitness Tracking App",
     description: "Cross-platform mobile app for workout tracking, nutrition logging, and personalized fitness plans.",
     longDescription: "Built a comprehensive fitness application that helps users track workouts, monitor nutrition, and achieve their health goals with AI-powered recommendations.",
@@ -125,7 +125,7 @@ export const projects: Project[] = [
     ]
   },
   {
-    id: "inventory-system",
+    _id: "inventory-system",
     title: "Inventory Management System",
     description: "Enterprise-grade inventory tracking with barcode scanning, automated reordering, and multi-location support.",
     longDescription: "Developed a robust inventory management solution for a manufacturing company with multiple warehouses and complex supply chain requirements.",
@@ -146,7 +146,7 @@ export const projects: Project[] = [
     ]
   },
   {
-    id: "social-media-app",
+    _id: "social-media-app",
     title: "Social Networking Platform",
     description: "Community-focused social platform with content creation, messaging, and event organization features.",
     longDescription: "Created a niche social networking platform for creative professionals to showcase work, connect with peers, and find collaboration opportunities.",

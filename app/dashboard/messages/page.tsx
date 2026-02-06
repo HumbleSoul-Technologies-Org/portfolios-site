@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState,useEffect } from "react"
 import { 
   Search, 
   Mail, 
@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
+import { useQuery } from "@tanstack/react-query"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,9 +39,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
+import { log } from "console"
+import { apiRequest } from "@/lib/queryClient"
+import { toast } from "@/hooks/use-toast"
 
 interface Message {
-  id: string
+  _id: string
   name: string
   email: string
   company?: string
@@ -48,7 +52,7 @@ interface Message {
   message: string
   projectType?: string
   budget?: string
-  timestamp: string
+  createdAt: string
   read: boolean
   starred: boolean
   archived: boolean
@@ -64,7 +68,7 @@ const initialMessages: Message[] = [
     message: "Hi! We're a growing startup looking to redesign our company website. We need a modern, responsive design that better reflects our brand and improves conversion rates. Our current site is outdated and doesn't perform well on mobile devices. We're looking for someone who can handle both the design and development aspects. Would love to discuss this further if you're available.",
     projectType: "Web Development",
     budget: "$10,000 - $25,000",
-    timestamp: "2 hours ago",
+    createdAt: "2 hours ago",
     read: false,
     starred: true,
     archived: false,
@@ -78,7 +82,7 @@ const initialMessages: Message[] = [
     message: "Hello, I came across your portfolio and was impressed by your mobile app work. We're building a fitness tracking app and need a skilled developer to bring our vision to life. The app should work on both iOS and Android. We have wireframes ready and would like to start development ASAP. Can you share your availability and rough timeline for a project like this?",
     projectType: "Mobile Development",
     budget: "$25,000 - $50,000",
-    timestamp: "5 hours ago",
+    createdAt: "5 hours ago",
     read: false,
     starred: false,
     archived: false,
@@ -92,7 +96,7 @@ const initialMessages: Message[] = [
     message: "Hi there! I run a small boutique and we're looking to expand our online presence. We need a custom e-commerce solution that can handle inventory management, payment processing, and integrates with our existing POS system. I've seen your e-commerce project in your portfolio and it looks exactly like what we need. What's your process for starting a new project?",
     projectType: "E-commerce",
     budget: "$15,000 - $30,000",
-    timestamp: "1 day ago",
+    createdAt: "1 day ago",
     read: false,
     starred: false,
     archived: false,
@@ -106,7 +110,7 @@ const initialMessages: Message[] = [
     message: "Thanks for the detailed proposal. The timeline looks good to us. I've discussed it with my team and we're ready to move forward. Can we schedule a kickoff call for next week? Also, please send over the contract so our legal team can review it. Looking forward to working together!",
     projectType: "Consulting",
     budget: "$5,000 - $10,000",
-    timestamp: "2 days ago",
+    createdAt: "2 days ago",
     read: true,
     starred: true,
     archived: false,
@@ -119,7 +123,7 @@ const initialMessages: Message[] = [
     subject: "Partnership Opportunity",
     message: "Hello! I'm reaching out from Design Agency Pro. We're looking for skilled developers to partner with on overflow projects. We have several clients who need development work but our in-house team is at capacity. Would you be interested in discussing a potential partnership? We can provide a steady stream of projects.",
     projectType: "Other",
-    timestamp: "3 days ago",
+    createdAt: "3 days ago",
     read: true,
     starred: false,
     archived: false,
@@ -132,7 +136,7 @@ const initialMessages: Message[] = [
     message: "We're a healthcare organization looking to build a patient portal. Given the sensitive nature of the data, we need someone experienced with HIPAA compliance. I saw your healthcare dashboard project and would like to discuss our requirements. Are you available for a consultation call this week?",
     projectType: "Healthcare",
     budget: "$50,000+",
-    timestamp: "4 days ago",
+    createdAt: "4 days ago",
     read: true,
     starred: false,
     archived: false,
@@ -140,13 +144,26 @@ const initialMessages: Message[] = [
 ]
 
 export default function MessagesPage() {
-  const [messages, setMessages] = useState<Message[]>(initialMessages)
+  const [messages, setMessages] = useState<Message[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null)
-  const [filter, setFilter] = useState<"all" | "unread" | "starred" | "archived">("all")
+  const [filter, setFilter] = useState<"new" | "read" | "starred" | "archived">("new")
   const [deleteDialog, setDeleteDialog] = useState<Message | null>(null)
   const [replyDialog, setReplyDialog] = useState<Message | null>(null)
   const [replyText, setReplyText] = useState("")
+
+  const { data:allMessages, isLoading, error } = useQuery<any>({
+    queryKey: ["contact","messages","all"],
+  })
+
+  useEffect(() => {
+    if (allMessages) {
+      setMessages(allMessages?.data?.messages || [])
+      
+    }
+   }, [allMessages])
+
+
 
   const filteredMessages = messages.filter((message) => {
     const matchesSearch = 
@@ -155,36 +172,80 @@ export default function MessagesPage() {
       message.message.toLowerCase().includes(searchQuery.toLowerCase())
     
     switch (filter) {
-      case "unread":
-        return matchesSearch && !message.read && !message.archived
+      case "read":
+        return matchesSearch && message.read && !message.archived && !message.starred
       case "starred":
-        return matchesSearch && message.starred && !message.archived
+        return matchesSearch && message.starred && !message.archived && message.read
       case "archived":
         return matchesSearch && message.archived
       default:
-        return matchesSearch && !message.archived
+        return matchesSearch && !message.archived && !message.read 
     }
   })
 
   const unreadCount = messages.filter(m => !m.read && !m.archived).length
 
-  const handleMarkAsRead = (id: string) => {
-    setMessages(messages.map(m => m.id === id ? { ...m, read: true } : m))
+  function formatDate(dateStr: string) {
+    // If the date is already a human readable string, leave it as-is
+    const parsed = Date.parse(dateStr)
+    if (isNaN(parsed)) return dateStr
+
+    const date = new Date(parsed)
+    const now = new Date()
+    const diffSeconds = Math.round((date.getTime() - now.getTime()) / 1000)
+    const abs = Math.abs(diffSeconds)
+    const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" })
+
+    if (abs < 60) return rtf.format(Math.round(diffSeconds), "second")
+    if (abs < 3600) return rtf.format(Math.round(diffSeconds / 60), "minute")
+    if (abs < 86400) return rtf.format(Math.round(diffSeconds / 3600), "hour")
+    if (abs < 7 * 86400) return rtf.format(Math.round(diffSeconds / 86400), "day")
+
+    return new Intl.DateTimeFormat(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    }).format(date)
   }
 
-  const handleToggleStar = (id: string) => {
-    setMessages(messages.map(m => m.id === id ? { ...m, starred: !m.starred } : m))
+  const handleMarkAsRead = async (id: string) => {
+    try {
+      await apiRequest("POST", `/contact/message/read/${id}`)
+      setMessages(messages.map(m => m._id === id ? { ...m, read: true } : m))
+    } catch (error) {
+      
+    }
+    // setMessages(messages.map(m => m._id === id ? { ...m, read: true } : m))
+  }
+
+  const handleToggleStar = async (id: string) => {
+    try {
+      await apiRequest("POST", `/contact/message/star/${id}`)
+      setSelectedMessage(m => m && m._id === id ? { ...m, starred: !m.starred } : m)
+      setMessages(messages.map(m => m._id === id ? { ...m, starred: !m.starred } : m))
+    } catch (error) {
+      console.log('====================================');
+      console.log(error);
+      console.log('====================================');
+      toast({
+        title: "Error",
+        description: "Failed to star message. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
   const handleArchive = (id: string) => {
-    setMessages(messages.map(m => m.id === id ? { ...m, archived: true } : m))
-    if (selectedMessage?.id === id) setSelectedMessage(null)
+    setMessages(messages.map(m => m._id === id ? { ...m, archived: true } : m))
+    if (selectedMessage?._id === id) setSelectedMessage(null)
   }
 
   const handleDelete = () => {
     if (deleteDialog) {
-      setMessages(messages.filter(m => m.id !== deleteDialog.id))
-      if (selectedMessage?.id === deleteDialog.id) setSelectedMessage(null)
+      setMessages(messages.filter(m => m._id !== deleteDialog._id))
+      if (selectedMessage?._id === deleteDialog._id) setSelectedMessage(null)
       setDeleteDialog(null)
     }
   }
@@ -192,7 +253,7 @@ export default function MessagesPage() {
   const handleSelectMessage = (message: Message) => {
     setSelectedMessage(message)
     if (!message.read) {
-      handleMarkAsRead(message.id)
+      handleMarkAsRead(message._id)
     }
   }
 
@@ -221,7 +282,7 @@ export default function MessagesPage() {
             />
           </div>
           <div className="flex gap-1">
-            {(["all", "unread", "starred", "archived"] as const).map((f) => (
+            {(["new", "read", "starred", "archived"] as const).map((f) => (
               <Button
                 key={f}
                 variant={filter === f ? "default" : "ghost"}
@@ -230,6 +291,11 @@ export default function MessagesPage() {
                 className="capitalize"
               >
                 {f}
+                {f === "new" && messages.filter(m => !m.read && !m.archived).length > 0 && (<p className="text-accent">{messages.filter(m => !m.read && !m.archived).length}</p>)}  
+                {f === "read" && messages.filter(m => m.read && !m.archived && !m.starred).length > 0 && (<p className="text-accent">{messages.filter(m => m.read && !m.archived && !m.starred).length}</p>)}  
+                {f === "starred" && messages.filter(m => m.starred && !m.archived).length > 0 && (<p className="text-accent">{messages.filter(m => m.starred && !m.archived).length}</p>)}  
+                {f === "archived" && messages.filter(m => m.archived).length > 0 && (<p className="text-accent">{messages.filter(m => m.archived).length}</p>)}  
+                 
               </Button>
             ))}
           </div>
@@ -240,16 +306,16 @@ export default function MessagesPage() {
           {filteredMessages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center p-4">
               <Mail className="h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">No messages found</p>
+              <p className="text-muted-foreground">No {filter} messages found</p>
             </div>
           ) : (
             filteredMessages.map((message) => (
               <button
-                key={message.id}
+                key={message._id}
                 onClick={() => handleSelectMessage(message)}
                 className={cn(
                   "w-full text-left p-4 border-b border-border hover:bg-muted/50 transition-colors",
-                  selectedMessage?.id === message.id && "bg-muted",
+                  selectedMessage?._id === message._id && "bg-muted",
                   !message.read && "bg-accent/5"
                 )}
               >
@@ -268,7 +334,7 @@ export default function MessagesPage() {
                       </span>
                       <div className="flex items-center gap-1 shrink-0">
                         {message.starred && <Star className="h-3 w-3 fill-accent text-accent" />}
-                        <span className="text-xs text-muted-foreground">{message.timestamp}</span>
+                        <span className="text-xs text-muted-foreground">{formatDate(message.createdAt)}</span>
                       </div>
                     </div>
                     <p className={cn(
@@ -315,13 +381,9 @@ export default function MessagesPage() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => handleToggleStar(selectedMessage.id)}
+                  onClick={() => handleToggleStar(selectedMessage._id)}
                 >
-                  {selectedMessage.starred ? (
-                    <Star className="h-4 w-4 fill-accent text-accent" />
-                  ) : (
-                    <StarOff className="h-4 w-4" />
-                  )}
+                   <Star className={`h-4 w-4 ${!!selectedMessage.starred ? "fill-accent text-accent" : "text-muted-foreground"}`} />
                 </Button>
                 <Button
                   variant="ghost"
@@ -337,11 +399,8 @@ export default function MessagesPage() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handleMarkAsRead(selectedMessage.id)}>
-                      <MailOpen className="h-4 w-4 mr-2" />
-                      Mark as {selectedMessage.read ? "unread" : "read"}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleArchive(selectedMessage.id)}>
+                    
+                    <DropdownMenuItem onClick={() => handleArchive(selectedMessage._id)}>
                       <Archive className="h-4 w-4 mr-2" />
                       Archive
                     </DropdownMenuItem>
@@ -371,7 +430,7 @@ export default function MessagesPage() {
                   <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <Clock className="h-3.5 w-3.5" />
-                      {selectedMessage.timestamp}
+                      {formatDate(selectedMessage.createdAt)}
                     </span>
                   </div>
                 </div>

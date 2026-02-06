@@ -59,6 +59,7 @@ export default function ProjectsManagementPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [editingProject, setEditingProject] = useState<Project | null>(null)
   const [deleteProject, setDeleteProject] = useState<Project | null>(null)
 
@@ -80,11 +81,30 @@ export default function ProjectsManagementPage() {
     return matchesSearch && matchesCategory
   })
 
-  const handleDeleteProject = () => {
-    if (deleteProject) {
-      setProjects(projects.filter(p => p.id !== deleteProject.id))
+  const handleDeleteProject = async (id: string) => {
+    setDeleting(true)
+    try {
+      await apiRequest("DELETE", `/projects/delete/${id}`)
+      setProjects(projects.filter(p => p._id !== id))
       setDeleteProject(null)
+      toast({
+        title: "Success",
+        description: "Project deleted successfully.",
+      })
+    } catch (error) {
+       
+      toast({
+        title: "Error",
+        description: "Failed to delete project. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setDeleting(false)
     }
+    // if (deleteProject) {
+    //   setProjects(projects.filter(p => p.id !== deleteProject._id))
+    //   setDeleteProject(null)
+    // }
   }
 
   const handleToggleFeatured = (projectId: string) => {
@@ -95,19 +115,31 @@ export default function ProjectsManagementPage() {
 
   const handleSaveProject = async (projectData: Project) => {
     try {
-      if (projectData.id && projects.some(p => p.id === projectData.id)) {
+      if (projectData._id && projects.some(p => p._id === projectData._id)) {
         // Update existing project
-        const response = await apiRequest("PUT", `/api/projects/${projectData.id}`, projectData)
-        setProjects(projects.map(p => p.id === projectData.id ? response : p))
+         await apiRequest("PUT", `/projects/update/${projectData._id}`, projectData)
+        setProjects(projects.map(p => p._id === projectData._id ? projectData : p))
+        toast({
+          title: "Success",
+          description: "Project updated successfully.",
+        })
       } else {
         // Create new project
-        const response = await apiRequest("POST", "/api/projects", projectData)
-        setProjects([response, ...projects])
+        const response = await apiRequest("POST", "/projects/create", projectData)
+        setProjects([projectData, ...projects])
+        toast({
+          title: "Success",
+          description: "Project added successfully.",
+        })
       }
       setIsAddDialogOpen(false)
       setEditingProject(null)
     } catch (error) {
       console.error("Error saving project:", error)
+      toast({
+        title: "Error",
+        description: "Failed to save project. Please try again.",
+      })
     }
   }
 
@@ -155,13 +187,14 @@ export default function ProjectsManagementPage() {
       {/* Projects Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredProjects.map((project) => (
-          <Card key={project.id} className="overflow-hidden group">
+          <Card key={project.id} className="overflow-hidden pt-0 group">
             <div className="relative aspect-video bg-muted">
               <Image
-                src={project.image || "/placeholder.svg"}
+                loading="lazy"
+                src={project?.image?.url || "https://static.vecteezy.com/system/resources/previews/022/059/000/non_2x/no-image-available-icon-vector.jpg"}
                 alt={project.title}
                 fill
-                className="object-cover"
+                className="object-fill h-96 w-full"
               />
               {project.featured && (
                 <div className="absolute top-2 left-2">
@@ -276,8 +309,8 @@ export default function ProjectsManagementPage() {
             <Button variant="outline" onClick={() => setDeleteProject(null)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDeleteProject}>
-              Delete
+            <Button variant="destructive" onClick={() => deleteProject && handleDeleteProject(deleteProject._id)}>
+              {deleting ? <span className="flex items-center gap-2"><Loader className="w-4 h-4 animate-spin" /> Deleting...</span> : <span className="flex items-center gap-2"><Trash2 className="w-4 h-4" /> Delete</span>}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -286,6 +319,8 @@ export default function ProjectsManagementPage() {
   )
 }
 
+
+// project form dialog component
 function ProjectDialog({
   open,
   onOpenChange,
@@ -297,9 +332,9 @@ function ProjectDialog({
   project: Project | null
   onSave: (project: Project) => Promise<void>
 }) {
-  const [imagePreview, setImagePreview] = useState<string>(project?.image ?? "")
+  const [imagePreview, setImagePreview] = useState<string>(project?.image?.url ?? "")
   const [formData, setFormData] = useState<Record<string, any>>(project  ?? {})
-  const [tagsInput, setTagsInput] = useState<string>(project?.tags?.join(", ") ??  "")
+  const [tagsInput, setTagsInput] = useState<string>(project?.technologies?.join(", ") ??  "")
   const [resultsInput, setResultsInput] = useState<string>(
     project?.results?.join("\n") ?? ""
   )
@@ -320,12 +355,12 @@ function ProjectDialog({
   // Reset form when opening or when editing a new project
   React.useEffect(() => {
     setFormData(project ??  {})
-    setTagsInput(project?.tags?.join(", ") ?? "")
+    setTagsInput(project?.technologies?.join(", ") ?? "")
     setResultsInput(project?.results?.join("\n") ?? "")
     setTestimonialQuote(project?.testimonial?.quote ?? "")
     setTestimonialAuthor(project?.testimonial?.author ?? "")
     setTestimonialRole(project?.testimonial?.role ?? "")
-    setImagePreview(project?.image ?? "")
+    setImagePreview(project?.image?.url ?? "")
   }, [project, open])
 
   const handleImageUpload = (file: any) => {
@@ -379,12 +414,17 @@ function ProjectDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // setLoading(true)
-     const imageUrl = await uploadFileToServer(selectedImage);
+    setLoading(true)
     try {
+      // upload image first (if a new image was selected)
+      let imageUrl = null
+      if (selectedImage) {
+        imageUrl = await uploadFileToServer(selectedImage)
+      }
 
       const payload: any = {
         ...formData,
+        id: project?._id,
         tags: tagsInput.split(",").map(tag => tag.trim()).filter(tag => tag),
         results: resultsInput.split("\n").map(result => result.trim()).filter(result => result),
         testimonial: {
@@ -392,19 +432,39 @@ function ProjectDialog({
           author: testimonialAuthor,
           role: testimonialRole,
         },
-        image: imageUrl || formData.image,
+        image: imageUrl || {url:project?.image?.url, public_id: project?.image?.public_id} || {} // use new image URL if uploaded, otherwise keep existing
       }
-      const res = await apiRequest("POST", '/projects/create', payload)
-      
-      if (res.ok) {
+     
+
+      // prefer delegating save to parent via onSave (handles create/update)
+      if (onSave) {
+        await onSave(payload)
         toast({
           title: "Success",
           description: `Project ${project ? "updated" : "added"} successfully.`,
         })
-        project
+        // onOpenChange(false)
       }
-      
-       
+      // else {
+         
+      //   if (payload._id) {
+      //     const res = await apiRequest("PUT", `/projects/update${payload._id}`, payload)
+          
+      //     toast({
+      //       title: "Success",
+      //       description: `Project updated successfully.`,
+      //     })
+      //     onOpenChange(false)
+      //   } else {
+      //     const res = await apiRequest("POST", "/api/projects", payload)
+      //     const data = await res.json()
+      //     toast({
+      //       title: "Success",
+      //       description: `Project added successfully.`,
+      //     })
+      //     onOpenChange(false)
+      //   }
+      // }
     } catch (error) {
       console.error("Error submitting form:", error)
       toast({
@@ -430,11 +490,11 @@ function ProjectDialog({
           {/* Image Preview */}
           {imagePreview && (
             <div className="relative aspect-video bg-muted rounded-lg overflow-hidden group">
-              <Image
+              <img
                 src={imagePreview}
                 alt="Project preview"
-                fill
-                className="object-cover"
+                                className=" inset-0 w-full h-full object-cover"
+
               />
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <input

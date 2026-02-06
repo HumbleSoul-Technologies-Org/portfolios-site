@@ -3,12 +3,15 @@
 import React from "react"
 
 import { useState } from "react"
-import { Send } from "lucide-react"
+import { Plane, Send, SendHorizonal } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { toast } from "@/hooks/use-toast"
+import { log } from "console"
+import { apiRequest } from "@/lib/queryClient"
 
 const projectTypes = [
   { value: "web", label: "Web Development" },
@@ -26,19 +29,58 @@ const budgetRanges = [
   { value: "50k-plus", label: "$50,000+" },
 ]
 
+ interface FormData {
+    name: string  
+    email: string
+    projectType?: string
+    budget?: string
+    subject: string
+    message: string
+  }
+
 export function ContactForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+ 
+
+  const initialFormData: FormData = {
+    name: "",
+    email: "",
+    projectType: undefined,
+    budget: undefined,
+    subject: "",
+    message: "",
+  }
+
+  const [formData, setFormData] = useState<FormData>(initialFormData)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setIsSubmitting(true)
 
-    // Simulate form submission
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
+    try {
+      await apiRequest("POST", "/contact/message/create", formData)
+      toast({
+        title: "Message Sent",
+        description: "Thank you for reaching out! I'll get back to you within 24 hours.",
+      })
+      setSubmitted(true)
+      setFormData(initialFormData)
+    } catch (error) {
+      console.log('====================================');
+      console.log(error);
+      console.log('====================================');
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
     setIsSubmitting(false)
-    setSubmitted(true)
+      
+    }
+
+    
   }
 
   if (submitted) {
@@ -71,6 +113,8 @@ export function ContactForm() {
             id="name"
             name="name"
             placeholder="Your name"
+            value={formData.name}
+            onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
             required
           />
         </div>
@@ -81,6 +125,8 @@ export function ContactForm() {
             name="email"
             type="email"
             placeholder="your@email.com"
+            value={formData.email}
+            onChange={(e) => setFormData((p) => ({ ...p, email: e.target.value }))}
             required
           />
         </div>
@@ -89,7 +135,7 @@ export function ContactForm() {
       <div className="grid gap-6 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="projectType">Project Type</Label>
-          <Select name="projectType" required>
+          <Select name="projectType" required value={formData.projectType} onValueChange={(val) => setFormData((p) => ({ ...p, projectType: val }))}>
             <SelectTrigger>
               <SelectValue placeholder="Select project type" />
             </SelectTrigger>
@@ -104,7 +150,7 @@ export function ContactForm() {
         </div>
         <div className="space-y-2">
           <Label htmlFor="budget">Budget Range</Label>
-          <Select name="budget">
+          <Select name="budget" value={formData.budget} onValueChange={(val) => setFormData((p) => ({ ...p, budget: val }))}>
             <SelectTrigger>
               <SelectValue placeholder="Select budget range" />
             </SelectTrigger>
@@ -125,6 +171,8 @@ export function ContactForm() {
           id="subject"
           name="subject"
           placeholder="Brief description of your project"
+          value={formData.subject}
+          onChange={(e) => setFormData((p) => ({ ...p, subject: e.target.value }))}
           required
         />
       </div>
@@ -136,13 +184,15 @@ export function ContactForm() {
           name="message"
           placeholder="Tell me about your project, goals, and timeline..."
           rows={6}
+          value={formData.message}
+          onChange={(e) => setFormData((p) => ({ ...p, message: e.target.value }))}
           required
         />
       </div>
 
       <Button type="submit" className="w-full gap-2" disabled={isSubmitting}>
         {isSubmitting ? (
-          <>Sending...</>
+          < > Sending... <SendHorizonal className="h-4 w-4 animate-bounce" /></>
         ) : (
           <>
             <Send className="h-4 w-4" />
