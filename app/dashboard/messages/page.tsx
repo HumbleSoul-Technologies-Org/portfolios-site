@@ -16,7 +16,8 @@ import {
   User,
   Building,
   DollarSign,
-  Calendar
+  Calendar,
+  ArchiveRestore
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -225,10 +226,12 @@ export default function MessagesPage() {
       await apiRequest("POST", `/contact/message/star/${id}`)
       setSelectedMessage(m => m && m._id === id ? { ...m, starred: !m.starred } : m)
       setMessages(messages.map(m => m._id === id ? { ...m, starred: !m.starred } : m))
+      toast({
+        title: "Success",
+        description: "Message added to favourites ",
+      })
     } catch (error) {
-      console.log('====================================');
-      console.log(error);
-      console.log('====================================');
+      
       toast({
         title: "Error",
         description: "Failed to star message. Please try again.",
@@ -237,9 +240,25 @@ export default function MessagesPage() {
     }
   }
 
-  const handleArchive = (id: string) => {
-    setMessages(messages.map(m => m._id === id ? { ...m, archived: true } : m))
-    if (selectedMessage?._id === id) setSelectedMessage(null)
+  const handleArchive = async (id: string) => {
+    try {
+      await apiRequest("POST", `/contact/message/archive/${id}`)
+      setMessages(messages.map(m => m._id === id ? { ...m, archived: true } : m))
+      if (selectedMessage?._id === id) setSelectedMessage(null)
+      toast({
+        title: "Success",
+        description: "Message archived.",
+      })
+    } catch (error) {
+      console.log('====================================');
+      console.log(error);
+      console.log('====================================');
+      toast({
+        title: "Error",
+        description: "Failed to archive message. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
   const handleDelete = () => {
@@ -400,9 +419,8 @@ export default function MessagesPage() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     
-                    <DropdownMenuItem onClick={() => handleArchive(selectedMessage._id)}>
-                      <Archive className="h-4 w-4 mr-2" />
-                      Archive
+                    <DropdownMenuItem className="hover:text-white" onClick={() => handleArchive(selectedMessage._id)}>
+                     {selectedMessage.archived ? (<><ArchiveRestore className="h-4 w-4 mr-2" /> Unarchive</>) : (<><Archive className="h-4 w-4 mr-2" /> Archive</>)}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem 
