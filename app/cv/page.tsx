@@ -1,4 +1,6 @@
-import { Metadata } from "next"
+"use client"
+
+import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
 import { 
   Award, 
@@ -14,11 +16,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-
-export const metadata: Metadata = {
-  title: "CV | Kisibo Jonathan",
-  description: "View my professional resume, experience, education, and skills.",
-}
+import { Skeleton } from "@/components/ui/skeleton"
 
 const experience = [
   {
@@ -102,6 +100,164 @@ const languages = [
 ]
 
 export default function CVPage() {
+  // Fetch CV data from the backend
+  const { data: cvData, isLoading, error } = useQuery<any>({
+    queryKey: ["resume","/"],
+     
+  });
+
+  // Extract data from response, handle both array and object formats
+  let resumeData = cvData?.data || cvData;
+  if (Array.isArray(resumeData)) {
+    resumeData = resumeData[0] || {};
+  }
+
+  const resumeInfo = resumeData?.resume || {};
+  const experienceData = resumeInfo?.experience || experience;
+  const educationData = resumeInfo?.education || education;
+  const skillsData = resumeInfo?.skill || skills;
+  const certificationData = resumeInfo?.certification || certifications;
+  const languageData = resumeInfo?.language || languages;
+
+  // Extract user profile data
+  const userProfile = resumeData?.profile || {
+    name: "Kisibo Jonathan",
+    title: "Full-Stack Developer",
+    location: "Kampala, Uganda",
+    email: "kisibojonathan150@gmail.com",
+    phone: "+256 741 745 165",
+    bio: "Full-stack developer with 3+ years of experience building scalable web applications and mobile apps. Specialized in React, Node.js, and cloud technologies. Passionate about clean code, user experience, and delivering high-quality products that make a real impact. Proven track record of leading projects and mentoring juniors.",
+  };
+
+  if (isLoading) {
+    return (
+      <div className="py-24">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6">
+          {/* Header Skeleton */}
+          <header className="mb-12 flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex-1">
+              <Skeleton className="h-10 w-3/4 mb-4" />
+              <Skeleton className="h-6 w-1/2 mb-4" />
+              <div className="flex flex-wrap gap-4">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+            </div>
+            <Skeleton className="h-10 w-32" />
+          </header>
+
+          {/* Summary Skeleton */}
+          <section className="mb-12 rounded-xl border border-border/50 bg-card p-6">
+            <Skeleton className="h-5 w-40 mb-4" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-2/3" />
+            </div>
+          </section>
+
+          {/* Experience Skeleton */}
+          <section className="mb-12">
+            <Skeleton className="h-5 w-40 mb-6" />
+            <div className="space-y-8">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="rounded-xl border border-border/50 bg-card p-6">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex-1">
+                      <Skeleton className="h-5 w-1/2 mb-2" />
+                      <Skeleton className="h-4 w-1/3 mb-2" />
+                      <Skeleton className="h-4 w-1/4" />
+                    </div>
+                    <Skeleton className="h-4 w-24" />
+                  </div>
+                  <Skeleton className="h-4 w-full mt-4" />
+                  <div className="mt-4 space-y-2">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-5/6" />
+                    <Skeleton className="h-4 w-4/5" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Skills Skeleton */}
+          <section className="mb-12">
+            <Skeleton className="h-5 w-40 mb-6" />
+            <div className="rounded-xl border border-border/50 bg-card p-6">
+              <div className="grid gap-6 sm:grid-cols-2">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i}>
+                    <Skeleton className="h-4 w-24 mb-3" />
+                    <div className="flex flex-wrap gap-2">
+                      <Skeleton className="h-6 w-16 rounded-full" />
+                      <Skeleton className="h-6 w-20 rounded-full" />
+                      <Skeleton className="h-6 w-14 rounded-full" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* Education Skeleton */}
+          <section className="mb-12">
+            <Skeleton className="h-5 w-40 mb-6" />
+            <div className="space-y-4">
+              {[1, 2].map((i) => (
+                <div key={i} className="rounded-xl border border-border/50 bg-card p-6">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex-1">
+                      <Skeleton className="h-5 w-1/2 mb-2" />
+                      <Skeleton className="h-4 w-1/3 mb-2" />
+                      <Skeleton className="h-4 w-2/3" />
+                    </div>
+                    <Skeleton className="h-4 w-24" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Certifications Skeleton */}
+          <section className="mb-12">
+            <Skeleton className="h-5 w-40 mb-6" />
+            <div className="grid gap-4 sm:grid-cols-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="rounded-xl border border-border/50 bg-card p-4">
+                  <Skeleton className="h-5 w-full mb-2" />
+                  <Skeleton className="h-4 w-2/3 mb-2" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Languages Skeleton */}
+          <section className="mb-12">
+            <Skeleton className="h-5 w-40 mb-6" />
+            <div className="flex flex-wrap gap-4">
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-12 w-32 rounded-xl" />
+              ))}
+            </div>
+          </section>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="py-24">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 text-center">
+          <p className="text-destructive">Failed to load CV data. Using default data.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="py-24">
       <div className="mx-auto max-w-4xl px-4 sm:px-6">
@@ -109,21 +265,21 @@ export default function CVPage() {
         <header className="mb-12 flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-4xl font-bold tracking-tight text-foreground">
-              Kisibo Jonathan
+              {userProfile.name}
             </h1>
-            <p className="mt-2 text-xl text-accent">Full-Stack Developer</p>
+            <p className="mt-2 text-xl text-accent">{userProfile.title}</p>
             <div className="mt-4 flex flex-wrap gap-4 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
                 <MapPin className="h-4 w-4" />
-                Kampala, Uganda
+                {userProfile.location}
               </span>
               <span className="flex items-center gap-1">
                 <Mail className="h-4 w-4" />
-                kisibojonathan150@gmail.com
+                {userProfile.email}
               </span>
               <span className="flex items-center gap-1">
                 <Phone className="h-4 w-4" />
-                +256 741 745 165
+                {userProfile.phone}
               </span>
             </div>
           </div>
@@ -142,10 +298,7 @@ export default function CVPage() {
             Professional Summary
           </h2>
           <p className="text-muted-foreground">
-            Full-stack developer with 3+ years of experience building scalable web applications 
-            and mobile apps. Specialized in React, Node.js, and cloud technologies. Passionate 
-            about clean code, user experience, and delivering high-quality products that make 
-            a real impact. Proven track record of leading projects and mentoring juniors.
+            {userProfile.bio}
           </p>
         </section>
 
@@ -156,8 +309,8 @@ export default function CVPage() {
             Work Experience
           </h2>
           <div className="space-y-8">
-            {experience.map((job) => (
-              <div key={job.title + job.company} className="rounded-xl border border-border/50 bg-card p-6">
+            {(Array.isArray(experienceData) ? experienceData : [experienceData]).map((job: any, idx: number) => (
+              <div key={idx} className="rounded-xl border border-border/50 bg-card p-6">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <h3 className="text-lg font-semibold text-foreground">{job.title}</h3>
@@ -167,14 +320,16 @@ export default function CVPage() {
                   <span className="text-sm font-medium text-muted-foreground">{job.period}</span>
                 </div>
                 <p className="mt-4 text-muted-foreground">{job.description}</p>
-                <ul className="mt-4 space-y-2">
-                  {job.achievements.map((achievement) => (
-                    <li key={achievement} className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <span className="mt-1.5 h-1.5 w-1.5  shrink-0 rounded-full bg-accent" />
-                      {achievement}
-                    </li>
-                  ))}
-                </ul>
+                {job.achievements && (
+                  <ul className="mt-4 space-y-2">
+                    {job.achievements.map((achievement: string) => (
+                      <li key={achievement} className="flex items-start gap-2 text-sm text-muted-foreground">
+                        <span className="mt-1.5 h-1.5 w-1.5  shrink-0 rounded-full bg-accent" />
+                        {achievement}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             ))}
           </div>
@@ -188,46 +343,40 @@ export default function CVPage() {
           </h2>
           <div className="rounded-xl border border-border/50 bg-card p-6">
             <div className="grid gap-6 sm:grid-cols-2">
-              <div>
-                <h3 className="mb-3 text-sm font-semibold text-accent">Frontend</h3>
-                <div className="flex flex-wrap gap-2">
-                  {skills.frontend.map((skill) => (
-                    <Badge key={skill} variant="secondary">{skill}</Badge>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <h3 className="mb-3 text-sm font-semibold text-accent">Backend</h3>
-                <div className="flex flex-wrap gap-2">
-                  {skills.backend.map((skill) => (
-                    <Badge key={skill} variant="secondary">{skill}</Badge>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <h3 className="mb-3 text-sm font-semibold text-accent">Database</h3>
-                <div className="flex flex-wrap gap-2">
-                  {skills.database.map((skill) => (
-                    <Badge key={skill} variant="secondary">{skill}</Badge>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <h3 className="mb-3 text-sm font-semibold text-accent">Tools & DevOps</h3>
-                <div className="flex flex-wrap gap-2">
-                  {skills.tools.map((skill) => (
-                    <Badge key={skill} variant="secondary">{skill}</Badge>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <h3 className="mb-3 text-sm font-semibold text-accent">Soft Skills</h3>
-                <div className="flex flex-wrap gap-2">
-                  {skills.soft.map((skill) => (
-                    <Badge key={skill} variant="secondary">{skill}</Badge>
-                  ))}
-                </div>
-              </div>
+              {Array.isArray(skillsData) ? (
+                // If skills is an array, group by category
+                Object.entries(
+                  skillsData.reduce((acc: any, skill: any) => {
+                    const category = skill.category || "Other";
+                    if (!acc[category]) acc[category] = [];
+                    acc[category].push(skill.name);
+                    return acc;
+                  }, {})
+                ).map(([category, skillList]: [string, any]) => (
+                  <div key={category}>
+                    <h3 className="mb-3 text-sm font-semibold text-accent">{category}</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {skillList.map((skill: string) => (
+                        <Badge key={skill} variant="secondary">{skill}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                // If skills is an object
+                Object.entries(skillsData).map(([category, skillList]: [string, any]) => (
+                  <div key={category}>
+                    <h3 className="mb-3 text-sm font-semibold text-accent capitalize">{category}</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {Array.isArray(skillList) && skillList.map((skill: any) => (
+                        <Badge key={typeof skill === 'string' ? skill : skill.name} variant="secondary">
+                          {typeof skill === 'string' ? skill : skill.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </section>
@@ -239,16 +388,16 @@ export default function CVPage() {
             Education
           </h2>
           <div className="space-y-4">
-            {education.map((edu) => (
-              <div key={edu.degree} className="rounded-xl border border-border/50 bg-card p-6">
+            {(Array.isArray(educationData) ? educationData : [educationData]).map((edu: any, idx: number) => (
+              <div key={idx} className="rounded-xl border border-border/50 bg-card p-6">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <h3 className="font-semibold text-foreground">{edu.degree}</h3>
-                    <p className="text-accent">{edu.school}</p>
+                    <p className="text-accent">{edu.institution}</p>
+                    {edu.description && <p className="mt-2 text-sm text-muted-foreground">{edu.description}</p>}
                   </div>
                   <span className="text-sm font-medium text-muted-foreground">{edu.period}</span>
                 </div>
-                <p className="mt-2 text-sm text-muted-foreground">{edu.description}</p>
               </div>
             ))}
           </div>
@@ -261,11 +410,11 @@ export default function CVPage() {
             Certifications
           </h2>
           <div className="grid gap-4 sm:grid-cols-3">
-            {certifications.map((cert) => (
-              <div key={cert.name} className="rounded-xl border border-border/50 bg-card p-4">
+            {(Array.isArray(certificationData) ? certificationData : []).map((cert: any, idx: number) => (
+              <div key={idx} className="rounded-xl border border-border/50 bg-card p-4">
                 <h3 className="font-semibold text-foreground">{cert.name}</h3>
                 <p className="mt-1 text-sm text-muted-foreground">{cert.issuer}</p>
-                <p className="mt-1 text-xs text-muted-foreground">{cert.year}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{cert.date}</p>
               </div>
             ))}
           </div>
@@ -278,9 +427,9 @@ export default function CVPage() {
             Languages
           </h2>
           <div className="flex flex-wrap gap-4">
-            {languages.map((lang) => (
-              <div key={lang.language} className="rounded-xl border border-border/50 bg-card px-4 py-3">
-                <span className="font-medium text-foreground">{lang.language}</span>
+            {(Array.isArray(languageData) ? languageData : []).map((lang: any, idx: number) => (
+              <div key={idx} className="rounded-xl border border-border/50 bg-card px-4 py-3">
+                <span className="font-medium text-foreground">{lang.language || lang.name}</span>
                 <span className="ml-2 text-sm text-muted-foreground">({lang.level})</span>
               </div>
             ))}
