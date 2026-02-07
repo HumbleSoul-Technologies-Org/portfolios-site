@@ -25,6 +25,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import axios from "axios"
 import {
   Select,
   SelectContent,
@@ -32,6 +33,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+
+import { useAuth } from "@/lib/useAuth"
 
 interface ProfileSettings {
   name: string
@@ -67,21 +70,22 @@ interface DisplaySettings {
 }
 
 export default function SettingsPage() {
+  const { user } = useAuth()
   const [profile, setProfile] = useState<ProfileSettings>({
-    name: "Your Name",
-    title: "Full-Stack Developer",
-    email: "hello@yourname.dev",
-    phone: "+1 (555) 123-4567",
-    location: "San Francisco, CA",
-    website: "https://yourname.dev",
-    bio: "Passionate full-stack developer with 5+ years of experience building modern web applications. Specialized in React, Next.js, and Node.js. I love turning complex problems into simple, beautiful solutions.",
-    avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQzR0bIMZ71HVeR5zF4PihQaDvTQQk6bsVERw&s",
+    name: user?.name || " ",
+    title: user?.title || "",
+    email: user?.email || "",
+    phone: user?.phone || "",
+    location: user?.address || "",
+    website: user?.website || "",
+    bio: user?.bio || "",
+    avatar: user?.avatarUrl?.url || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQzR0bIMZ71HVeR5zF4PihQaDvTQQk6bsVERw&s",
   })
-
+//Passionate full-stack developer with 5+ years of experience building modern web applications. Specialized in React, Next.js, and Node.js. I love turning complex problems into simple, beautiful solutions.
   const [social, setSocial] = useState<SocialLinks>({
-    github: "https://github.com/yourname",
-    linkedin: "https://linkedin.com/in/yourname",
-    twitter: "https://twitter.com/yourname",
+    github: "",
+    linkedin: "",
+    twitter: "",
     instagram: "",
   })
 

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,17 +9,17 @@ import { useAuth } from "@/lib/useAuth";
 
 function LoginForm() {
   const router = useRouter();
-  const [username, setUsername] = useState("admin");
-  const [password, setPassword] = useState("123456");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const { login, user, loading } = useAuth();
-  const searchParams = useSearchParams();
 
   // If already authenticated, redirect to dashboard
   useEffect(() => {
-    if (!loading && user) {
+    if (!loading ) {
+      console.log("User authenticated on login page, redirecting to dashboard");
       router.replace("/dashboard");
     }
   }, [loading, user, router]);
@@ -31,8 +31,7 @@ function LoginForm() {
 
     try {
       await login(username, password);
-      const from = searchParams?.get("from") || "/dashboard";
-      router.push(from);
+      // Redirect is handled in useAuth hook
     } catch (err: any) {
       setError(err?.message || "Login failed");
     } finally {
@@ -52,26 +51,28 @@ function LoginForm() {
         <div>
           <Label htmlFor="username">Username</Label>
           <Input
+          className="mt-4"
             id="username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            placeholder="admin"
+            placeholder=""
           />
         </div>
 
         <div>
           <Label htmlFor="password">Password</Label>
           <Input
+          className="mt-4"
             id="password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="123456"
+            placeholder=""
           />
         </div>
 
         <div className="flex items-center justify-between">
-          <Button type="submit" disabled={submitting} className="w-full">
+          <Button type="submit" disabled={submitting || !username || !password} className="w-full">
             {submitting ? "Signing in..." : "Sign in"}
           </Button>
         </div>

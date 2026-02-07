@@ -1,5 +1,8 @@
+"use client"
+
 import Link from "next/link"
 import { Github, Linkedin, Mail, Twitter } from "lucide-react"
+import { useAuth } from "@/lib/useAuth"
 
 const socialLinks = [
   { href: "https://github.com", icon: Github, label: "GitHub" },
@@ -15,7 +18,9 @@ const footerLinks = [
   { href: "/contact", label: "Contact" },
 ]
 
+
 export function Footer() {
+  const { user } = useAuth()
   return (
     <footer className="border-t border-border/40 bg-secondary/30">
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
@@ -26,7 +31,7 @@ export function Footer() {
               className="text-xl flex items-center gap-2 font-semibold tracking-tight text-foreground"
             >
           <img className="w-10 h-10" src='https://images.vexels.com/media/users/3/224169/isolated/lists/dbfe1f493ad01117fa4ec5ba10150e4d-computer-programming-logo.png'/>
-          <span className="text-transparent bg-clip-text bg-linear-to-r from-accent   to-orange-500" >Humble Soul Technologies </span>
+          <span className="text-transparent bg-clip-text bg-linear-to-r from-accent   to-orange-500" >{user?.name.toUpperCase() || "Humble Soul Technologies"}</span>
               
             </Link>
             <p className="max-w-xs text-center text-sm text-muted-foreground md:text-left">
