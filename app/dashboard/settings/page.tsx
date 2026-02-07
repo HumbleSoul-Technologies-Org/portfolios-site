@@ -190,7 +190,8 @@ export default function SettingsPage() {
                   <Label htmlFor="name">Full Name</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
+                    <Input 
+                    placeholder="Enter your full name"
                       id="name"
                       value={profile.name}
                       onChange={(e) => setProfile({ ...profile, name: e.target.value })}
@@ -200,7 +201,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="title">Professional Title</Label>
-                  <Input
+                  <Input 
                     id="title"
                     value={profile.title}
                     onChange={(e) => setProfile({ ...profile, title: e.target.value })}
@@ -214,7 +215,8 @@ export default function SettingsPage() {
                   <Label htmlFor="email">Email Address</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
+                    <Input 
+                    placeholder="Enter your email address"
                       id="email"
                       type="email"
                       value={profile.email}
@@ -227,7 +229,8 @@ export default function SettingsPage() {
                   <Label htmlFor="phone">Phone Number</Label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
+                    <Input 
+                    placeholder="Enter your phone number"
                       id="phone"
                       type="tel"
                       value={profile.phone}
@@ -243,7 +246,8 @@ export default function SettingsPage() {
                   <Label htmlFor="location">Location</Label>
                   <div className="relative">
                     <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
+                    <Input 
+                    placeholder="Enter your location"
                       id="location"
                       value={profile.location}
                       onChange={(e) => setProfile({ ...profile, location: e.target.value })}
@@ -255,7 +259,8 @@ export default function SettingsPage() {
                   <Label htmlFor="website">Website</Label>
                   <div className="relative">
                     <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
+                    <Input 
+                    placeholder="Enter your website URL"
                       id="website"
                       type="url"
                       value={profile.website}
