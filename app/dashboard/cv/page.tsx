@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { 
   Plus, 
   Pencil, 
@@ -11,7 +11,9 @@ import {
   Award,
   Code,
   Languages,
-  Download
+  Download,
+  Save,
+  Loader
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -28,9 +30,14 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { apiRequest } from "@/lib/queryClient"
+import { set } from "react-hook-form"
+import { toast } from "@/hooks/use-toast"
+import { useQuery } from "@tanstack/react-query"
+import { log } from "console"
 
 interface Experience {
-  id: string
+  _id: string
   title: string
   company: string
   location: string
@@ -40,7 +47,7 @@ interface Experience {
 }
 
 interface Education {
-  id: string
+  _id: string
   degree: string
   institution: string
   location: string
@@ -49,14 +56,14 @@ interface Education {
 }
 
 interface Skill {
-  id: string
+  _id: string
   name: string
   level: "Beginner" | "Intermediate" | "Advanced" | "Expert"
   category: string
 }
 
 interface Certification {
-  id: string
+  _id: string
   name: string
   issuer: string
   date: string
@@ -64,79 +71,27 @@ interface Certification {
 }
 
 interface Language {
-  id: string
+  _id: string
   name: string
   level: string
 }
 
-const initialExperience: Experience[] = [
-  {
-    id: "1",
-    title: "Senior Full-Stack Developer",
-    company: "Tech Solutions Inc.",
-    location: "San Francisco, CA",
-    period: "2023 - Present",
-    description: "Leading development of enterprise web applications. Mentoring junior developers and implementing best practices.",
-    current: true,
-  },
-  {
-    id: "2",
-    title: "Full-Stack Developer",
-    company: "Digital Agency Co.",
-    location: "New York, NY",
-    period: "2021 - 2023",
-    description: "Developed responsive web applications and mobile apps for various clients across different industries.",
-    current: false,
-  },
-  {
-    id: "3",
-    title: "Junior Developer",
-    company: "StartupXYZ",
-    location: "Austin, TX",
-    period: "2019 - 2021",
-    description: "Built and maintained web applications using React and Node.js. Collaborated with design team on UI/UX implementations.",
-    current: false,
-  },
-]
-
-const initialEducation: Education[] = [
-  {
-    id: "1",
-    degree: "Bachelor of Science in Information Technology",
-    institution: "University of Technology",
-    location: "San Francisco, CA",
-    period: "2015 - 2019",
-    description: "Specialized in Web Development, Mobile Apps, and System/Software Development.",
-  },
-]
-
-const initialSkills: Skill[] = [
-  { id: "1", name: "React", level: "Expert", category: "Frontend" },
-  { id: "2", name: "Next.js", level: "Expert", category: "Frontend" },
-  { id: "3", name: "TypeScript", level: "Advanced", category: "Languages" },
-  { id: "4", name: "Node.js", level: "Advanced", category: "Backend" },
-  { id: "5", name: "PostgreSQL", level: "Advanced", category: "Database" },
-  { id: "6", name: "React Native", level: "Intermediate", category: "Mobile" },
-  { id: "7", name: "Python", level: "Intermediate", category: "Languages" },
-  { id: "8", name: "AWS", level: "Intermediate", category: "DevOps" },
-]
-
-const initialCertifications: Certification[] = [
-  { id: "1", name: "AWS Certified Developer", issuer: "Amazon Web Services", date: "2024" },
-  { id: "2", name: "Meta React Developer", issuer: "Meta", date: "2023" },
-]
-
-const initialLanguages: Language[] = [
-  { id: "1", name: "English", level: "Native" },
-  { id: "2", name: "Spanish", level: "Intermediate" },
-]
+ 
 
 export default function CVManagementPage() {
-  const [experience, setExperience] = useState<Experience[]>(initialExperience)
-  const [education, setEducation] = useState<Education[]>(initialEducation)
-  const [skills, setSkills] = useState<Skill[]>(initialSkills)
-  const [certifications, setCertifications] = useState<Certification[]>(initialCertifications)
-  const [languages, setLanguages] = useState<Language[]>(initialLanguages)
+  const [experience, setExperience] = useState<Experience[]>([])
+  const [education, setEducation] = useState<Education[]>([])
+  const [skills, setSkills] = useState<Skill[]>([])
+  const [certifications, setCertifications] = useState<Certification[]>([])
+  const [languages, setLanguages] = useState<Language[]>([])
+  const [loading, setLoading] = useState(false)
+  const [resume, setResume] = useState<any>({})
+  const [skillFilter, setSkillFilter] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState<string | null>(null)
+
+  const { data:cv, error } = useQuery<any>({
+    queryKey: ["resume","/"],
+  })
   
   const [editDialog, setEditDialog] = useState<{
     type: "experience" | "education" | "skill" | "certification" | "language" | null
@@ -150,28 +105,24 @@ export default function CVManagementPage() {
     name: string
   }>({ type: null, id: null, name: "" })
 
-  const handleDelete = () => {
-    if (!deleteDialog.type || !deleteDialog.id) return
-    
-    switch (deleteDialog.type) {
-      case "experience":
-        setExperience(experience.filter(e => e.id !== deleteDialog.id))
-        break
-      case "education":
-        setEducation(education.filter(e => e.id !== deleteDialog.id))
-        break
-      case "skill":
-        setSkills(skills.filter(s => s.id !== deleteDialog.id))
-        break
-      case "certification":
-        setCertifications(certifications.filter(c => c.id !== deleteDialog.id))
-        break
-      case "language":
-        setLanguages(languages.filter(l => l.id !== deleteDialog.id))
-        break
+  useEffect(() => {
+    if (cv) {
+      // Handle case where API returns array of objects
+      let data = cv.data
+      if (Array.isArray(data)) {
+        data = data.length > 0 ? data[0] : {}
+      }
+      setResume(data?.resume || {})
+      setExperience(data?.resume?.experience || [])
+      setEducation(data?.resume?.education || [])
+      setSkills(data?.resume?.skill || [])
+      setCertifications(data?.resume?.certification || [])
+      setLanguages(data?.resume?.language || [])
+ 
     }
-    setDeleteDialog({ type: null, id: null, name: "" })
-  }
+   }, [cv])
+
+
 
   const getLevelColor = (level: string) => {
     switch (level) {
@@ -181,6 +132,187 @@ export default function CVManagementPage() {
       default: return "bg-muted text-muted-foreground"
     }
   }
+
+  //Creating and updating functions
+  const saveExperience = async (data: Experience) => { 
+    try {
+      setLoading(true)
+      if (!data) {
+        throw new Error("No data provided")
+      }
+
+      if (editDialog.isNew) {
+       const payLoad = {experience:data, id:resume._id||""}
+        await apiRequest("POST", `/resume/experience/create`,payLoad)
+      } else {
+         const index = experience.findIndex(exp => (exp as any)._id === data._id)
+         await apiRequest("PUT", `/resume/update/${resume?._id }/${editDialog?.type}/${index}`, {experience:data})
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An error occurred while saving experience. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+  const saveEducation = async (data: Education) => { 
+    try {
+      setLoading(true)
+      if (!data) {
+        throw new Error("No data provided")
+      }
+
+      if (editDialog.isNew) {
+       const payLoad = {education:data, id:resume._id||""}
+        await apiRequest("POST", `/resume/education/create`,payLoad)
+      } else {
+        const index = education.findIndex(edu => (edu as any)._id === data._id)
+         await apiRequest("PUT", `/resume/update/${resume?._id }/${editDialog?.type}/${index}`, {education:data})
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An error occurred while saving education. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+  const saveSkills = async (data: Skill) => { 
+    try {
+      setLoading(true)
+      if (!data) {
+        throw new Error("No data provided")
+      }
+
+      if (editDialog.isNew) {
+       const payLoad = {skill:data, id:resume._id||""}
+        await apiRequest("POST", `/resume/skill/create`,payLoad)
+      } else {
+        const index = skills.findIndex(skill => (skill as any)._id === data._id)
+         await apiRequest("PUT", `/resume/update/${resume?._id }/${editDialog?.type}/${index}`, {skill:data})
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An error occurred while saving skills. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+  const saveCertification = async (data: Certification) => { 
+    try {
+      setLoading(true)
+      if (!data) {
+        throw new Error("No data provided")
+      }
+
+      if (editDialog.isNew) {
+       const payLoad = {certification:data, id:resume._id||""}
+        await apiRequest("POST", `/resume/certification/create`,payLoad)
+      } else {
+        const index = certifications.findIndex(cert => (cert as any)._id === data._id)
+         await apiRequest("PUT", `/resume/update/${resume?._id }/${editDialog?.type}/${index}`, {certification:data})
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An error occurred while saving certifications. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+  const saveLanguages = async (data: Language) => { 
+    try {
+      setLoading(true)
+      if (!data) {
+        throw new Error("No data provided")
+      }
+
+      if (editDialog.isNew) {
+       const payLoad = {language:data, id:resume._id||""}
+        await apiRequest("POST", `/resume/language/create`,payLoad)
+      } else {
+       
+        const index = languages.findIndex(lang => (lang as any)._id === data._id)
+         await apiRequest("PUT", `/resume/update/${resume?._id }/${editDialog?.type}/${index}`, {language:data})
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An error occurred while saving languages. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // functions for deleting items from each section
+  const handleDelete = async () => {
+    if (!deleteDialog.type || !deleteDialog.id) return
+
+    setDeleting(deleteDialog.id)
+
+    try {
+      switch (deleteDialog.type) {
+        case "experience": {
+          const expIndex = experience.findIndex(exp => (exp as any).id === deleteDialog.id || (exp as any)._id === deleteDialog.id)
+          if (expIndex >= 0) {
+            await apiRequest("DELETE", `/resume/delete/${resume?._id}/${deleteDialog.type}/${expIndex}`)
+          }
+          setExperience(experience.filter(e => (e as any).id !== deleteDialog.id && (e as any)._id !== deleteDialog.id))
+          break
+        }
+        case "education": {
+          const eduIndex = education.findIndex(educ => (educ as any).id === deleteDialog.id || (educ as any)._id === deleteDialog.id)
+          if (eduIndex >= 0) {
+            await apiRequest("DELETE", `/resume/delete/${resume?._id}/${deleteDialog.type}/${eduIndex}`)
+          }
+          setEducation(education.filter(e => (e as any).id !== deleteDialog.id && (e as any)._id !== deleteDialog.id))
+          break
+        }
+        case "skill": {
+          const skIndex = skills.findIndex(skill => (skill as any).id === deleteDialog.id || (skill as any)._id === deleteDialog.id)
+          if (skIndex >= 0) {
+            await apiRequest("DELETE", `/resume/delete/${resume?._id}/${deleteDialog.type}/${skIndex}`)
+          }
+          setSkills(skills.filter(s => (s as any).id !== deleteDialog.id && (s as any)._id !== deleteDialog.id))
+          break
+        }
+        case "certification": {
+          const certIndex = certifications.findIndex(cert => (cert as any).id === deleteDialog.id || (cert as any)._id === deleteDialog.id)
+          if (certIndex >= 0) {
+            await apiRequest("DELETE", `/resume/delete/${resume?._id}/${deleteDialog.type}/${certIndex}`)
+          }
+          setCertifications(certifications.filter(c => (c as any).id !== deleteDialog.id && (c as any)._id !== deleteDialog.id))
+          break
+        }
+        case "language": {
+          const lanIndex = languages.findIndex(lang => (lang as any).id === deleteDialog.id || (lang as any)._id === deleteDialog.id)
+          if (lanIndex >= 0) {
+            await apiRequest("DELETE", `/resume/delete/${resume?._id}/${deleteDialog.type}/${lanIndex}`)
+          }
+          setLanguages(languages.filter(l => (l as any).id !== deleteDialog.id && (l as any)._id !== deleteDialog.id))
+          break
+        }
+      }
+    } catch (err) {
+      toast({ title: "Error", description: "Failed to delete item.", variant: "destructive" })
+    } finally {
+      setDeleting(null)
+      setDeleteDialog({ type: null, id: null, name: "" })
+    }
+  }
+
 
   return (
     <div className="p-6 lg:p-8">
@@ -227,61 +359,72 @@ export default function CVManagementPage() {
           <div className="flex justify-end">
             <Button onClick={() => setEditDialog({ 
               type: "experience", 
-              data: { id: "", title: "", company: "", location: "", period: "", description: "", current: false },
+              data: { _id:"", title: "", company: "", location: "", period: "", description: "", current: false },
               isNew: true 
             })}>
               <Plus className="h-4 w-4 mr-2" />
               Add Experience
             </Button>
           </div>
+          {experience.length === 0 ? (
+            <div className="p-4 text-sm text-muted-foreground">No experience entries. Click "Add Experience" to create one.</div>
+          ) : (
           <div className="space-y-4">
-            {experience.map((exp) => (
-              <Card key={exp.id} className="group">
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-4">
-                    <div className="hidden sm:flex mt-1 text-muted-foreground cursor-grab">
-                      <GripVertical className="h-5 w-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <h3 className="font-semibold">{exp.title}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {exp.company} • {exp.location}
-                          </p>
+            {(() => {
+              const items:any = []
+              experience.forEach((exp) => {
+                const expId = (exp as any).id || (exp as any)._id
+                items.push(
+                  <Card key={expId} className="group">
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-4">
+                        {/* <div className="hidden sm:flex mt-1 text-muted-foreground cursor-grab">
+                          <GripVertical className="h-5 w-5" />
+                        </div> */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-4">
+                            <div>
+                              <h3 className="font-semibold">{exp.title}</h3>
+                              <p className="text-sm text-muted-foreground">
+                                {exp.company} • {exp.location}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {exp.current && (
+                                <Badge className="bg-accent text-accent-foreground shrink-0">Current</Badge>
+                              )}
+                              <span className="text-sm text-muted-foreground shrink-0">{exp.period}</span>
+                            </div>
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-2">{exp.description}</p>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {exp.current && (
-                            <Badge className="bg-accent text-accent-foreground shrink-0">Current</Badge>
-                          )}
-                          <span className="text-sm text-muted-foreground shrink-0">{exp.period}</span>
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8"
+                            onClick={() => setEditDialog({ type: "experience", data: exp, isNew: false })}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            onClick={() => setDeleteDialog({ type: "experience", id: expId, name: exp.title })}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
-                      <p className="text-sm text-muted-foreground mt-2">{exp.description}</p>
-                    </div>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8"
-                        onClick={() => setEditDialog({ type: "experience", data: exp, isNew: false })}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 text-destructive hover:text-destructive"
-                        onClick={() => setDeleteDialog({ type: "experience", id: exp.id, name: exp.title })}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    </CardContent>
+                  </Card>
+                )
+              })
+              return items
+            })()}
           </div>
+          )}
         </TabsContent>
 
         {/* Education Tab */}
@@ -289,64 +432,112 @@ export default function CVManagementPage() {
           <div className="flex justify-end">
             <Button onClick={() => setEditDialog({ 
               type: "education", 
-              data: { id: "", degree: "", institution: "", location: "", period: "", description: "" },
+              data: { _id:"", degree: "", institution: "", location: "", period: "", description: "" },
               isNew: true 
             })}>
               <Plus className="h-4 w-4 mr-2" />
               Add Education
             </Button>
           </div>
+          {education.length === 0 ? (
+            <div className="p-4 text-sm text-muted-foreground">No education entries. Click "Add Education" to create one.</div>
+          ) : (
           <div className="space-y-4">
-            {education.map((edu) => (
-              <Card key={edu.id} className="group">
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-4">
-                    <div className="hidden sm:flex mt-1 text-muted-foreground cursor-grab">
-                      <GripVertical className="h-5 w-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <h3 className="font-semibold">{edu.degree}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {edu.institution} • {edu.location}
-                          </p>
+            {(() => {
+              const items:any = []
+              education.forEach((edu) => {
+                const eduId = (edu as any).id || (edu as any)._id
+                items.push(
+                  <Card key={eduId} className="group">
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-4">
+                        <div className="hidden sm:flex mt-1 text-muted-foreground cursor-grab">
+                          <GripVertical className="h-5 w-5" />
                         </div>
-                        <span className="text-sm text-muted-foreground shrink-0">{edu.period}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-4">
+                            <div>
+                              <h3 className="font-semibold">{edu.degree}</h3>
+                              <p className="text-sm text-muted-foreground">
+                                {edu.institution} • {edu.location}
+                              </p>
+                            </div>
+                            <span className="text-sm text-muted-foreground shrink-0">{edu.period}</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-2">{edu.description}</p>
+                        </div>
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8"
+                            onClick={() => setEditDialog({ type: "education", data: edu, isNew: false })}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            onClick={() => setDeleteDialog({ type: "education", id: eduId, name: edu.degree })}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                      <p className="text-sm text-muted-foreground mt-2">{edu.description}</p>
-                    </div>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8"
-                        onClick={() => setEditDialog({ type: "education", data: edu, isNew: false })}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 text-destructive hover:text-destructive"
-                        onClick={() => setDeleteDialog({ type: "education", id: edu.id, name: edu.degree })}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    </CardContent>
+                  </Card>
+                )
+              })
+              return items
+            })()}
           </div>
+          )}
         </TabsContent>
 
         {/* Skills Tab */}
         <TabsContent value="skills" className="space-y-4">
-          <div className="flex justify-end">
+          <div className="flex justify-between items-center">
+            <div className="flex gap-2 flex-wrap">
+              <Button
+                variant={skillFilter === null ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSkillFilter(null)}
+              >
+                All
+              </Button>
+              <Button
+                variant={skillFilter === "Technical Skills" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSkillFilter("Technical Skills")}
+              >
+                Technical Skills
+              </Button>
+              <Button
+                variant={skillFilter === "Soft Skills" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSkillFilter("Soft Skills")}
+              >
+                Soft Skills
+              </Button>
+              <Button
+                variant={skillFilter === "Professional Skills" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSkillFilter("Professional Skills")}
+              >
+                Professional Skills
+              </Button>
+              <Button
+                variant={skillFilter === "Other" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSkillFilter("Other")}
+              >
+                Other
+              </Button>
+            </div>
             <Button onClick={() => setEditDialog({ 
               type: "skill", 
-              data: { id: "", name: "", level: "Intermediate", category: "Frontend" },
+              data: {_id:"", name: "", level: "",  },
               isNew: true 
             })}>
               <Plus className="h-4 w-4 mr-2" />
@@ -359,9 +550,14 @@ export default function CVManagementPage() {
               <CardDescription>Your skills organized by category</CardDescription>
             </CardHeader>
             <CardContent>
+              {skills.filter(skill => skillFilter === null || skill.category === skillFilter).length === 0 ? (
+                <div className="p-4 text-sm text-muted-foreground">No skills found for the selected category. Click "Add Skill" to create one.</div>
+              ) : (
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {Object.entries(
-                  skills.reduce((acc, skill) => {
+                  skills
+                    .filter(skill => skillFilter === null || skill.category === skillFilter)
+                    .reduce((acc, skill) => {
                     if (!acc[skill.category]) acc[skill.category] = []
                     acc[skill.category].push(skill)
                     return acc
@@ -370,41 +566,49 @@ export default function CVManagementPage() {
                   <div key={category}>
                     <h4 className="text-sm font-medium mb-3">{category}</h4>
                     <div className="space-y-2">
-                      {categorySkills.map((skill) => (
-                        <div 
-                          key={skill.id} 
-                          className="flex items-center justify-between gap-2 p-2 rounded-lg hover:bg-muted/50 group"
-                        >
-                          <span className="text-sm">{skill.name}</span>
-                          <div className="flex items-center gap-2">
-                            <Badge className={getLevelColor(skill.level)} variant="secondary">
-                              {skill.level}
-                            </Badge>
-                            <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-6 w-6"
-                                onClick={() => setEditDialog({ type: "skill", data: skill, isNew: false })}
-                              >
-                                <Pencil className="h-3 w-3" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-6 w-6 text-destructive hover:text-destructive"
-                                onClick={() => setDeleteDialog({ type: "skill", id: skill.id, name: skill.name })}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
+                      {(() => {
+                        const items:any = []
+                        categorySkills.forEach((skill) => {
+                          const skillId = (skill as any).id || (skill as any)._id
+                          items.push(
+                            <div 
+                              key={skillId} 
+                              className="flex items-center justify-between gap-2 p-2 rounded-lg hover:bg-muted/50 group"
+                            >
+                              <span className="text-sm">{skill.name}</span>
+                              <div className="flex items-center gap-2">
+                                <Badge className={getLevelColor(skill.level)} variant="secondary">
+                                  {skill.level}
+                                </Badge>
+                                <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-6 w-6"
+                                    onClick={() => setEditDialog({ type: "skill", data: skill, isNew: false })}
+                                  >
+                                    <Pencil className="h-3 w-3" />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-6 w-6 text-destructive hover:text-destructive"
+                                    onClick={() => setDeleteDialog({ type: "skill", id: skillId, name: skill.name })}
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                      ))}
+                          )
+                        })
+                        return items
+                      })()}
                     </div>
                   </div>
                 ))}
               </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -414,51 +618,62 @@ export default function CVManagementPage() {
           <div className="flex justify-end">
             <Button onClick={() => setEditDialog({ 
               type: "certification", 
-              data: { id: "", name: "", issuer: "", date: "", url: "" },
+              data: {_id:"", name: "", issuer: "", date: "", url: "" },
               isNew: true 
             })}>
               <Plus className="h-4 w-4 mr-2" />
               Add Certification
             </Button>
           </div>
+          {certifications.length === 0 ? (
+            <div className="p-4 text-sm text-muted-foreground">No certifications yet. Click "Add Certification" to create one.</div>
+          ) : (
           <div className="grid gap-4 sm:grid-cols-2">
-            {certifications.map((cert) => (
-              <Card key={cert.id} className="group">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 text-accent">
-                        <Award className="h-5 w-5" />
+            {(() => {
+              const items:any = []
+              certifications.forEach((cert) => {
+                const certId = (cert as any).id || (cert as any)._id
+                items.push(
+                  <Card key={certId} className="group">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 text-accent">
+                            <Award className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold">{cert.name}</h3>
+                            <p className="text-sm text-muted-foreground">{cert.issuer}</p>
+                            <p className="text-xs text-muted-foreground mt-1">{cert.date}</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8"
+                            onClick={() => setEditDialog({ type: "certification", data: cert, isNew: false })}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            onClick={() => setDeleteDialog({ type: "certification", id: certId, name: cert.name })}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-semibold">{cert.name}</h3>
-                        <p className="text-sm text-muted-foreground">{cert.issuer}</p>
-                        <p className="text-xs text-muted-foreground mt-1">{cert.date}</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8"
-                        onClick={() => setEditDialog({ type: "certification", data: cert, isNew: false })}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 text-destructive hover:text-destructive"
-                        onClick={() => setDeleteDialog({ type: "certification", id: cert.id, name: cert.name })}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    </CardContent>
+                  </Card>
+                )
+              })
+              return items
+            })()}
           </div>
+          )}
         </TabsContent>
 
         {/* Languages Tab */}
@@ -466,7 +681,7 @@ export default function CVManagementPage() {
           <div className="flex justify-end">
             <Button onClick={() => setEditDialog({ 
               type: "language", 
-              data: { id: "", name: "", level: "" },
+              data: {_id:"", name: "", level: "",},
               isNew: true 
             })}>
               <Plus className="h-4 w-4 mr-2" />
@@ -479,42 +694,53 @@ export default function CVManagementPage() {
               <CardDescription>Languages you speak and your proficiency level</CardDescription>
             </CardHeader>
             <CardContent>
+              {languages.length === 0 ? (
+                <div className="p-4 text-sm text-muted-foreground">No languages added yet. Click "Add Language" to create one.</div>
+              ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {languages.map((lang) => (
-                  <div 
-                    key={lang.id} 
-                    className="flex items-center justify-between p-3 rounded-lg border group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-sm font-medium">
-                        {lang.name.slice(0, 2).toUpperCase()}
-                      </div>
-                      <div>
-                        <p className="font-medium text-sm">{lang.name}</p>
-                        <p className="text-xs text-muted-foreground">{lang.level}</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-7 w-7"
-                        onClick={() => setEditDialog({ type: "language", data: lang, isNew: false })}
+                {(() => {
+                  const items:any = []
+                  languages.forEach((lang,index) => {
+                    const langId =  (lang as any)._id
+                    items.push(
+                      <div 
+                        key={langId} 
+                        className="flex items-center justify-between p-3 rounded-lg border group"
                       >
-                        <Pencil className="h-3 w-3" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-7 w-7 text-destructive hover:text-destructive"
-                        onClick={() => setDeleteDialog({ type: "language", id: lang.id, name: lang.name })}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-sm font-medium">
+                            {lang.name.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">{lang.name}</p>
+                            <p className="text-xs text-muted-foreground">{lang.level}</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7"
+                            onClick={() => setEditDialog({ type: "language", data: lang, isNew: false })}
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7 text-destructive hover:text-destructive"
+                            onClick={() => setDeleteDialog({ type: "language", id: langId, name: lang.name })}
+                          >
+                            {deleting === langId ? <Loader className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                          </Button>
+                        </div>
+                      </div>
+                    )
+                  })
+                  return items
+                })()}
               </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -527,13 +753,10 @@ export default function CVManagementPage() {
         data={editDialog.data as Experience}
         isNew={editDialog.isNew}
         onSave={(data) => {
-          if (editDialog.isNew) {
-            setExperience([{ ...data, id: Date.now().toString() }, ...experience])
-          } else {
-            setExperience(experience.map(e => e.id === data.id ? data : e))
-          }
-          setEditDialog({ type: null, data: null, isNew: false })
+          saveExperience(data)
+          // setEditDialog({ type: null, data: null, isNew: false })
         }}
+        loading={loading}
       />
 
       <EducationDialog
@@ -542,13 +765,11 @@ export default function CVManagementPage() {
         data={editDialog.data as Education}
         isNew={editDialog.isNew}
         onSave={(data) => {
-          if (editDialog.isNew) {
-            setEducation([{ ...data, id: Date.now().toString() }, ...education])
-          } else {
-            setEducation(education.map(e => e.id === data.id ? data : e))
-          }
-          setEditDialog({ type: null, data: null, isNew: false })
+          saveEducation(data)
+          // setEditDialog({ type: null, data: null, isNew: false })
         }}
+        loading={loading}
+
       />
 
       <SkillDialog
@@ -557,13 +778,11 @@ export default function CVManagementPage() {
         data={editDialog.data as Skill}
         isNew={editDialog.isNew}
         onSave={(data) => {
-          if (editDialog.isNew) {
-            setSkills([...skills, { ...data, id: Date.now().toString() }])
-          } else {
-            setSkills(skills.map(s => s.id === data.id ? data : s))
-          }
-          setEditDialog({ type: null, data: null, isNew: false })
+          saveSkills(data)
+          // setEditDialog({ type: null, data: null, isNew: false })
         }}
+        loading={loading}
+
       />
 
       <CertificationDialog
@@ -572,13 +791,10 @@ export default function CVManagementPage() {
         data={editDialog.data as Certification}
         isNew={editDialog.isNew}
         onSave={(data) => {
-          if (editDialog.isNew) {
-            setCertifications([...certifications, { ...data, id: Date.now().toString() }])
-          } else {
-            setCertifications(certifications.map(c => c.id === data.id ? data : c))
-          }
-          setEditDialog({ type: null, data: null, isNew: false })
+          saveCertification(data)
+          // setEditDialog({ type: null, data: null, isNew: false })
         }}
+        loading={loading}
       />
 
       <LanguageDialog
@@ -587,13 +803,10 @@ export default function CVManagementPage() {
         data={editDialog.data as Language}
         isNew={editDialog.isNew}
         onSave={(data) => {
-          if (editDialog.isNew) {
-            setLanguages([...languages, { ...data, id: Date.now().toString() }])
-          } else {
-            setLanguages(languages.map(l => l.id === data.id ? data : l))
-          }
-          setEditDialog({ type: null, data: null, isNew: false })
+          saveLanguages(data)
+          // setEditDialog({ type: null, data: null, isNew: false })
         }}
+        loading={loading}
       />
 
       {/* Delete Confirmation Dialog */}
@@ -610,7 +823,7 @@ export default function CVManagementPage() {
               Cancel
             </Button>
             <Button variant="destructive" onClick={handleDelete}>
-              Delete
+              {deleting === deleteDialog.id ? <Loader className="h-4 w-4 animate-spin" /> : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -620,16 +833,27 @@ export default function CVManagementPage() {
 }
 
 // Dialog Components
-function ExperienceDialog({ open, onOpenChange, data, isNew, onSave }: {
+function ExperienceDialog({ open, onOpenChange, data, isNew, onSave ,loading}: {
   open: boolean
   onOpenChange: () => void
   data: Experience | null
   isNew: boolean
   onSave: (data: Experience) => void
+  loading: boolean
 }) {
-  const [formData, setFormData] = useState<Experience>(data || { id: "", title: "", company: "", location: "", period: "", description: "", current: false })
+  const [formData, setFormData] = useState<any>(data || { id: "", title: "", company: "", location: "", period: "", description: "", current: false })
+  
+  // Update form data when data prop changes
+  useEffect(() => {
+    if (data && open) {
+      setFormData(data)
+    }
+  }, [data, open])
   
   if (!open) return null
+  
+  
+
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -641,21 +865,21 @@ function ExperienceDialog({ open, onOpenChange, data, isNew, onSave }: {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Job Title</Label>
-              <Input value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
+              <Input  value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
             </div>
             <div className="space-y-2">
               <Label>Company</Label>
-              <Input value={formData.company} onChange={(e) => setFormData({ ...formData, company: e.target.value })} />
+              <Input  value={formData.company} onChange={(e) => setFormData({ ...formData, company: e.target.value })} />
             </div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Location</Label>
-              <Input value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} />
+              <Input  value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} />
             </div>
             <div className="space-y-2">
               <Label>Period</Label>
-              <Input value={formData.period} onChange={(e) => setFormData({ ...formData, period: e.target.value })} placeholder="2023 - Present" />
+              <Input  value={formData.period} onChange={(e) => setFormData({ ...formData, period: e.target.value })} placeholder="2023 - Present" />
             </div>
           </div>
           <div className="space-y-2">
@@ -665,21 +889,29 @@ function ExperienceDialog({ open, onOpenChange, data, isNew, onSave }: {
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onOpenChange}>Cancel</Button>
-          <Button onClick={() => onSave(formData)}>Save</Button>
+          <Button onClick={() => onSave(formData)} disabled={loading}>{loading ? <>Saving... <Save className="h-4 w-4 ml-2 animate-bounce" /></> : "Save"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   )
 }
 
-function EducationDialog({ open, onOpenChange, data, isNew, onSave }: {
+function EducationDialog({ open, onOpenChange, data, isNew, onSave,loading }: {
   open: boolean
   onOpenChange: () => void
   data: Education | null
   isNew: boolean
+  loading: boolean
   onSave: (data: Education) => void
 }) {
-  const [formData, setFormData] = useState<Education>(data || { id: "", degree: "", institution: "", location: "", period: "", description: "" })
+  const [formData, setFormData] = useState<any>(data || { id: "", degree: "", institution: "", location: "", period: "", description: "" })
+  
+  // Update form data when data prop changes
+  useEffect(() => {
+    if (data && open) {
+      setFormData(data)
+    }
+  }, [data, open])
   
   if (!open) return null
   
@@ -715,21 +947,29 @@ function EducationDialog({ open, onOpenChange, data, isNew, onSave }: {
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onOpenChange}>Cancel</Button>
-          <Button onClick={() => onSave(formData)}>Save</Button>
+          <Button disabled={loading} onClick={() => onSave(formData)}>{loading ? <>Saving... <Save className="h-4 w-4 ml-2 animate-bounce" /></> : "Save"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   )
 }
 
-function SkillDialog({ open, onOpenChange, data, isNew, onSave }: {
+function SkillDialog({ open, onOpenChange, data, isNew, onSave, loading }: {
   open: boolean
   onOpenChange: () => void
   data: Skill | null
   isNew: boolean
   onSave: (data: Skill) => void
+  loading: boolean
 }) {
-  const [formData, setFormData] = useState<Skill>(data || { id: "", name: "", level: "Intermediate", category: "Frontend" })
+  const [formData, setFormData] = useState<any|{}>(data || {  name: "", level: "", category: "" })
+  
+  // Update form data when data prop changes
+  useEffect(() => {
+    if (data && open) {
+      setFormData(data)
+    }
+  }, [data, open])
   
   if (!open) return null
   
@@ -742,45 +982,63 @@ function SkillDialog({ open, onOpenChange, data, isNew, onSave }: {
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>Skill Name</Label>
-            <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+            <Input className="" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Category</Label>
-              <Input value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} placeholder="Frontend, Backend, etc." />
+              <select
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                className="flex h-9 w-full cursor-pointer rounded-md  border-input bg-white text-background px-3 py-1 text-sm shadow-xs"
+              >
+                <option value="">Select a category</option>
+                <option value="Technical Skills">Technical Skills</option>
+                <option value="Soft Skills">Soft Skills</option>
+                <option value="Professional Skills">Professional Skills</option>
+                <option value="Other">Other</option>
+              </select>
             </div>
             <div className="space-y-2">
               <Label>Level</Label>
               <select 
                 value={formData.level} 
                 onChange={(e) => setFormData({ ...formData, level: e.target.value as Skill["level"] })}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs"
+                className="flex h-9 w-full cursor-pointer rounded-md  border-input bg-white text-background border-0 px-3 py-1 text-sm shadow-xs"
               >
-                <option value="Beginner">Beginner</option>
-                <option value="Intermediate">Intermediate</option>
-                <option value="Advanced">Advanced</option>
-                <option value="Expert">Expert</option>
+                <option className="text-sm text-black cursor-pointer" value="Beginner">Beginner</option>
+                <option className="text-sm text-black cursor-pointer" value="Intermediate">Intermediate</option>
+                <option className="text-sm text-black cursor-pointer" value="Advanced">Advanced</option>
+                <option className="text-sm text-black cursor-pointer" value="Expert">Expert</option>
               </select>
             </div>
           </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onOpenChange}>Cancel</Button>
-          <Button onClick={() => onSave(formData)}>Save</Button>
+          <Button disabled={loading} onClick={() => onSave(formData)}>{loading ? <>Saving... <Save className="h-4 w-4 ml-2 animate-bounce" /></> : "Save"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   )
 }
 
-function CertificationDialog({ open, onOpenChange, data, isNew, onSave }: {
+function CertificationDialog({ open, onOpenChange, data, isNew, onSave, loading }: {
   open: boolean
   onOpenChange: () => void
   data: Certification | null
   isNew: boolean
   onSave: (data: Certification) => void
+  loading: boolean
 }) {
-  const [formData, setFormData] = useState<Certification>(data || { id: "", name: "", issuer: "", date: "", url: "" })
+  const [formData, setFormData] = useState<any|{}>(data || {  name: "", issuer: "", date: "", url: "" })
+  
+  // Update form data when data prop changes
+  useEffect(() => {
+    if (data && open) {
+      setFormData(data)
+    }
+  }, [data, open])
   
   if (!open) return null
   
@@ -812,21 +1070,29 @@ function CertificationDialog({ open, onOpenChange, data, isNew, onSave }: {
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onOpenChange}>Cancel</Button>
-          <Button onClick={() => onSave(formData)}>Save</Button>
+          <Button disabled={loading} onClick={() => onSave(formData)}>{loading ? <>Saving... <Save className="h-4 w-4 ml-2 animate-bounce" /></> : "Save"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   )
 }
 
-function LanguageDialog({ open, onOpenChange, data, isNew, onSave }: {
+function LanguageDialog({ open, onOpenChange, data, isNew, onSave, loading }: {
   open: boolean
   onOpenChange: () => void
   data: Language | null
   isNew: boolean
   onSave: (data: Language) => void
+  loading: boolean
 }) {
-  const [formData, setFormData] = useState<Language>(data || { id: "", name: "", level: "" })
+  const [formData, setFormData] = useState<any|{}>(data || {  name: "", level: "" })
+  
+  // Update form data when data prop changes
+  useEffect(() => {
+    if (data && open) {
+      setFormData(data)
+    }
+  }, [data, open])
   
   if (!open) return null
   
@@ -840,17 +1106,27 @@ function LanguageDialog({ open, onOpenChange, data, isNew, onSave }: {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Language</Label>
-              <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+              <Input placeholder="English, French, chinese..." value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
             </div>
             <div className="space-y-2">
               <Label>Proficiency Level</Label>
-              <Input value={formData.level} onChange={(e) => setFormData({ ...formData, level: e.target.value })} placeholder="Native, Fluent, Intermediate..." />
+              <select
+                value={formData.level}
+                onChange={(e) => setFormData({ ...formData, level: e.target.value })}
+                className="flex h-9 w-full cursor-pointer rounded-md border border-input bg-white text-background px-3 py-1 text-sm shadow-xs"
+              >
+                <option value="">Select a level</option>
+                <option value="Beginner">Beginner</option>
+                <option value="Intermediate">Intermediate</option>
+                <option value="Advanced">Advanced</option>
+                <option value="Expert">Expert</option>
+              </select>
             </div>
           </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onOpenChange}>Cancel</Button>
-          <Button onClick={() => onSave(formData)}>Save</Button>
+          <Button disabled={loading} onClick={() => onSave(formData)}>{loading ? <>Saving... <Save className="h-4 w-4 ml-2 animate-bounce" /></> : "Save"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

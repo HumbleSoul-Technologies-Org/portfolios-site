@@ -73,91 +73,7 @@ interface Reply {
   createdAt: string
 }
 
-const initialMessages: Message[] = [
-  {
-    id: "1",
-    name: "Sarah Thompson",
-    email: "sarah@techstartup.io",
-    company: "TechStartup.io",
-    subject: "Website Redesign Project",
-    message: "Hi! We're a growing startup looking to redesign our company website. We need a modern, responsive design that better reflects our brand and improves conversion rates. Our current site is outdated and doesn't perform well on mobile devices. We're looking for someone who can handle both the design and development aspects. Would love to discuss this further if you're available.",
-    projectType: "Web Development",
-    budget: "$10,000 - $25,000",
-    createdAt: "2 hours ago",
-    read: false,
-    starred: true,
-    archived: false,
-  },
-  {
-    id: "2",
-    name: "Michael Chen",
-    email: "m.chen@innovate.com",
-    company: "Innovate Labs",
-    subject: "Mobile App Development",
-    message: "Hello, I came across your portfolio and was impressed by your mobile app work. We're building a fitness tracking app and need a skilled developer to bring our vision to life. The app should work on both iOS and Android. We have wireframes ready and would like to start development ASAP. Can you share your availability and rough timeline for a project like this?",
-    projectType: "Mobile Development",
-    budget: "$25,000 - $50,000",
-    createdAt: "5 hours ago",
-    read: false,
-    starred: false,
-    archived: false,
-  },
-  {
-    id: "3",
-    name: "Emily Rodriguez",
-    email: "emily.r@boutique.co",
-    company: "Boutique Co",
-    subject: "E-commerce Platform Inquiry",
-    message: "Hi there! I run a small boutique and we're looking to expand our online presence. We need a custom e-commerce solution that can handle inventory management, payment processing, and integrates with our existing POS system. I've seen your e-commerce project in your portfolio and it looks exactly like what we need. What's your process for starting a new project?",
-    projectType: "E-commerce",
-    budget: "$15,000 - $30,000",
-    createdAt: "1 day ago",
-    read: false,
-    starred: false,
-    archived: false,
-  },
-  {
-    id: "4",
-    name: "David Kim",
-    email: "david@enterprise.com",
-    company: "Enterprise Solutions",
-    subject: "Re: Project Timeline",
-    message: "Thanks for the detailed proposal. The timeline looks good to us. I've discussed it with my team and we're ready to move forward. Can we schedule a kickoff call for next week? Also, please send over the contract so our legal team can review it. Looking forward to working together!",
-    projectType: "Consulting",
-    budget: "$5,000 - $10,000",
-    createdAt: "2 days ago",
-    read: true,
-    starred: true,
-    archived: false,
-  },
-  {
-    id: "5",
-    name: "Lisa Wang",
-    email: "lisa@designagency.com",
-    company: "Design Agency Pro",
-    subject: "Partnership Opportunity",
-    message: "Hello! I'm reaching out from Design Agency Pro. We're looking for skilled developers to partner with on overflow projects. We have several clients who need development work but our in-house team is at capacity. Would you be interested in discussing a potential partnership? We can provide a steady stream of projects.",
-    projectType: "Other",
-    createdAt: "3 days ago",
-    read: true,
-    starred: false,
-    archived: false,
-  },
-  {
-    id: "6",
-    name: "James Wilson",
-    email: "jwilson@healthcare.org",
-    subject: "Healthcare App Consultation",
-    message: "We're a healthcare organization looking to build a patient portal. Given the sensitive nature of the data, we need someone experienced with HIPAA compliance. I saw your healthcare dashboard project and would like to discuss our requirements. Are you available for a consultation call this week?",
-    projectType: "Healthcare",
-    budget: "$50,000+",
-    createdAt: "4 days ago",
-    read: true,
-    starred: false,
-    archived: false,
-  },
-]
-
+ 
 export default function MessagesPage() {
   const [messages, setMessages] = useState<Message[]>([])
   const [searchQuery, setSearchQuery] = useState("")
@@ -294,7 +210,7 @@ export default function MessagesPage() {
   const handleDelete = async (id:string) => {
     try {
       setIsDeleting(true)
-      await apiRequest("POST", `/contact/delete/message/${id}`)
+      await apiRequest("DELETE", `/contact/delete/message/${id}`)
       setMessages(messages.filter(m => m._id !== id))
       if (selectedMessage?._id === id) setSelectedMessage(null)
       setDeleteDialog(null)

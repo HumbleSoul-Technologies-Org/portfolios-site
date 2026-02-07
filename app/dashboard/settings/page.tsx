@@ -75,7 +75,7 @@ export default function SettingsPage() {
     location: "San Francisco, CA",
     website: "https://yourname.dev",
     bio: "Passionate full-stack developer with 5+ years of experience building modern web applications. Specialized in React, Next.js, and Node.js. I love turning complex problems into simple, beautiful solutions.",
-    avatar: "",
+    avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQzR0bIMZ71HVeR5zF4PihQaDvTQQk6bsVERw&s",
   })
 
   const [social, setSocial] = useState<SocialLinks>({
@@ -452,7 +452,7 @@ export default function SettingsPage() {
                     setDisplay({ ...display, theme: value })
                   }
                 >
-                  <SelectTrigger className="w-full sm:w-[200px]">
+                  <SelectTrigger className="w-full sm:w-50">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
