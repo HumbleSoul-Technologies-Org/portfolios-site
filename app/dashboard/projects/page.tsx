@@ -90,11 +90,11 @@ export default function ProjectsManagementPage() {
     }
   }, [Projects]);
 
-  const filteredProjects = projects.filter((project) => {
-    const matchesSearch = project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.description.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesCategory = categoryFilter === "all" || project.category === categoryFilter
-    return matchesSearch && matchesCategory
+  const filteredProjects = projects?.filter((project) => {
+    const matchesSearch = project?.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      project?.description.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesCategory = categoryFilter === "all" || project?.category === categoryFilter
+    return matchesSearch && matchesCategory || []
   })
 
   const handleDeleteProject = async (id: string) => {

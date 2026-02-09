@@ -673,7 +673,7 @@ export default function CVManagementPage() {
                   }, {} as Record<string, Skill[]>)
                 ).map(([category, categorySkills]) => (
                   <div key={category}>
-                    <h4 className="text-sm font-medium mb-3">{category}</h4>
+                    <h4 className="text-sm font-medium text-accent mb-3">{category}</h4>
                     <div className="space-y-2">
                       {(() => {
                         const items:any = []
