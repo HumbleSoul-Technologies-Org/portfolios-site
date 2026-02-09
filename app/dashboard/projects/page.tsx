@@ -146,7 +146,6 @@ export default function ProjectsManagementPage() {
       if (projectData._id) {
         // Update existing project
         await apiRequest("PUT", `/projects/update/${projectData._id}`, projectData)
-        setProjects(projects.map((p:any) => p._id === projectData._id ? projectData : p))
         toast({
           title: "✓ Project Updated",
           description: `"${projectData.title}" has been updated successfully.`,
@@ -155,7 +154,6 @@ export default function ProjectsManagementPage() {
       } else {
         // Create new project
         await apiRequest("POST", "/projects/create", projectData)
-        setProjects([...projects, projectData])
         toast({
           title: "✓ Project Created",
           description: `"${projectData.title}" has been added to your portfolio.`,
