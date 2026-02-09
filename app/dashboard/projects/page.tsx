@@ -91,16 +91,12 @@ export default function ProjectsManagementPage() {
       return;
     }
     
-    let projectsData: any[] = [];
-    
-    // Handle both direct array and { data: [...] } response structures
-    if (Array.isArray(Projects)) {
-      projectsData = Projects;
-    } else if (Projects && typeof Projects === 'object' && Array.isArray(Projects.data)) {
-      projectsData = Projects.data;
+
+    if (Projects) {
+     setProjects(Array.isArray(Projects?.data?.projects) ? Projects.data.projects : []);
     }
     
-    setProjects(Array.isArray(projectsData) ? projectsData : []);
+    
   }, [Projects]);
 
   const filteredProjects = projects.filter((project:any) => {
@@ -146,7 +142,8 @@ export default function ProjectsManagementPage() {
 
   const handleSaveProject = async (projectData: Project) => { 
     try {
-      if (projectData._id && projects.some((p:any) => p._id === projectData._id)) {
+      // Check if we're updating (projectData has _id) or creating (no _id)
+      if (projectData._id) {
         // Update existing project
         await apiRequest("PUT", `/projects/update/${projectData._id}`, projectData)
         setProjects(projects.map((p:any) => p._id === projectData._id ? projectData : p))
@@ -302,7 +299,7 @@ export default function ProjectsManagementPage() {
                     {tag}
                   </Badge>
                 ))}
-                {project.technologies.length > 3 && (
+                {project?.technologies.length > 3 && (
                   <Badge variant="outline" className="text-xs">
                     +{project.technologies.length - 3}
                   </Badge>
@@ -391,7 +388,7 @@ function ProjectDialog({
   const [loading, setLoading] = useState<boolean>(false)
   const [isUploading, setIsUploading] = useState<boolean>(false)
 
-  const { register, handleSubmit, watch, control, formState } = useForm<ProjectFormData>({
+  const { register, handleSubmit, watch, control, formState, reset } = useForm<ProjectFormData>({
     resolver: zodResolver(projectFormSchema),
     mode: "onChange",
     defaultValues: {
@@ -408,13 +405,30 @@ function ProjectDialog({
 
   // Reset form when opening or when editing a new project
   React.useEffect(() => {
-    setTagsInput(project?.tags?.join(", ") ?? "")
+    // Reset form fields with current project data
+    reset({
+      title: project?.title ?? "",
+      category: project?.category ?? "web",
+      description: project?.description ?? "",
+      longDescription: project?.longDescription ?? "",
+      year: project?.year ?? "",
+      client: project?.client ?? "",
+      liveUrl: project?.liveUrl ?? "",
+      githubUrl: project?.githubUrl ?? "",
+    })
+    
+    setTagsInput(project?.technologies?.join(", ") ?? "")
     setResultsInput(project?.results?.join("\n") ?? "")
     setTestimonialQuote(project?.testimonial?.quote ?? "")
     setTestimonialAuthor(project?.testimonial?.author ?? "")
     setTestimonialRole(project?.testimonial?.role ?? "")
     setImagePreview(project?.image?.url ?? "")
-  }, [project, open])
+    setDuration(project?.duration ?? "")
+    setFeatured(project?.featured ?? false)
+    setChallenge(project?.challenge ?? "")
+    setSolution(project?.solution ?? "")
+    setSelectedImage(null)
+  }, [project, open, reset])
 
   const handleImageUpload = (file: any) => {
     const reader = new FileReader()
@@ -445,7 +459,7 @@ function ProjectDialog({
       const base = process.env.NEXT_PUBLIC_API_URL || "";
       const url = `${base}/projects/upload/image`;
       const resp = await axios.post(url, fd);
-      return resp.data || null;
+      return resp.data.data || null;
     } catch (err) {
       console.error("Error uploading image:", err);
       toast({
@@ -471,11 +485,12 @@ function ProjectDialog({
       let imageUrl = null
       if (selectedImage) {
         imageUrl = await uploadFileToServer(selectedImage)
+         
       }
 
       const payload: any = {
         ...values,
-        id: project?._id,
+        _id: project?._id,
         tags: tagsInput.split(",").map(tag => tag.trim()).filter(tag => tag),
         results: resultsInput.split("\n").map(result => result.trim()).filter(result => result),
         duration,
