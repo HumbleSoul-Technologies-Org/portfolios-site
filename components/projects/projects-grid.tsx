@@ -41,7 +41,7 @@ export function ProjectsGrid({ projects, categories }: ProjectsGridProps) {
       {/* Projects Grid */}
       <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
         {filteredProjects.map((project) => (
-          <ProjectCard key={project.id} project={project} />
+          <ProjectCard key={project._id} project={project} />
         ))}
       </div>
 
@@ -56,11 +56,11 @@ export function ProjectsGrid({ projects, categories }: ProjectsGridProps) {
 
 function ProjectCard({ project }: { project: Project }) {
   return (
-    <Link  href={`/projects/${project.id}`} className="group flex flex-col cursor-pointer overflow-hidden rounded-xl border border-border/50 bg-card transition-all hover:border-accent/30 hover:shadow-lg">
+    <Link  href={`/projects/${project._id}`} className="group flex flex-col cursor-pointer overflow-hidden rounded-xl border border-border/50 bg-card transition-all hover:border-accent/30 hover:shadow-lg">
       {/* Project Image */}
       <div className="relative aspect-video  overflow-hidden bg-muted">
         <Image
-          src={project.image || "/placeholder.svg"}
+          src={project.image?.url || "https://static.vecteezy.com/system/resources/previews/022/059/000/non_2x/no-image-available-icon-vector.jpg"}
           alt={project.title}
           fill
           className="object-cover transition-transform duration-300 group-hover:scale-105"
@@ -71,31 +71,7 @@ function ProjectCard({ project }: { project: Project }) {
             <Badge className="bg-accent text-accent-foreground">Featured</Badge>
           </div>
         )}
-        {/* Overlay on hover */}
-        {/* <div className="absolute inset-0 flex items-center justify-center gap-3 bg-foreground/80 opacity-0 transition-opacity group-hover:opacity-100">
-          {project.liveUrl && (
-            <a
-              href={project.liveUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-full bg-background p-2 text-foreground transition-transform hover:scale-110"
-              aria-label="View live site"
-            >
-              <ExternalLink className="h-5 w-5" />
-            </a>
-          )}
-          {project.githubUrl && (
-            <a
-              href={project.githubUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-full bg-background p-2 text-foreground transition-transform hover:scale-110"
-              aria-label="View source code"
-            >
-              <Github className="h-5 w-5" />
-            </a>
-          )}
-        </div> */}
+        
       </div>
 
       {/* Project Content */}
@@ -107,22 +83,20 @@ function ProjectCard({ project }: { project: Project }) {
           )}
         </div>
         <h3 className="text-lg font-semibold text-foreground">
-          <Link href={`/projects/${project.id}`} className="hover:text-accent">
-            {project.title}
-          </Link>
+           {project.title}
         </h3>
         <p className="mt-2 flex-1 text-sm text-muted-foreground">
           {project.description}
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
-          {project.tags.slice(0, 4).map((tag) => (
+          {(project?.tags ?? []).slice(0, 4).map((tag: string) => (
             <Badge key={tag} variant="secondary" className="text-xs">
               {tag}
             </Badge>
           ))}
-          {project.tags.length > 4 && (
+          {(project?.tags ?? []).length > 4 && (
             <Badge variant="secondary" className="text-xs">
-              +{project.tags.length - 4}
+              +{(project?.tags ?? []).length - 4}
             </Badge>
           )}
         </div>

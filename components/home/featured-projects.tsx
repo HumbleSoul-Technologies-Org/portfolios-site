@@ -12,14 +12,14 @@ import { useEffect,useState } from "react"
  
 export function FeaturedProjects() {
   const { data: projects, isLoading, error } = useQuery<any>({
-    queryKey: ["featuredProjects"],
+    queryKey: ["projects","all"],
   })
 
   const  [featuredProjects, setFeaturedProjects] = useState<any[]>([])
 
   useEffect(() => { 
-    if (projects && projects.data && projects.data.length > 0) {
-      const featured = projects?.data?.filter((project: any) => project.featured)
+    if (projects && projects.data && projects.data.projects.length > 0) {
+      const featured = projects?.data?.projects.filter((project: any) => project.featured)
       setFeaturedProjects(featured)
     }
   }, [projects, isLoading, error])
@@ -53,7 +53,7 @@ export function FeaturedProjects() {
         <div className="grid gap-8 lg:grid-cols-3">
           {(isLoading ? Array.from({ length: 3 }) : featuredProjects.slice(0, 4)).map((project: any, idx: number) => (
             <article
-              key={isLoading ? `skeleton-${idx}` : project.id}
+              key={isLoading ? `skeleton-${idx}` : project._id}
               className="group flex flex-col overflow-hidden rounded-xl border border-border/50 bg-card transition-all hover:border-accent/30 hover:shadow-lg hover:shadow-accent/20 animate-fade-in"
               style={{ animationDelay: `${idx * 100}ms` }}
             >
@@ -64,7 +64,7 @@ export function FeaturedProjects() {
                 ) : (
                   <>
                     <Image
-                      src={project.image || "/placeholder.svg"}
+                      src={project?.image?.url || "https://static.vecteezy.com/system/resources/previews/022/059/000/non_2x/no-image-available-icon-vector.jpg"}
                       alt={project.title}
                       fill
                       className="object-cover transition-transform duration-300 group-hover:scale-105"

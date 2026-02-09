@@ -13,12 +13,8 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState<any[]>([])
 
   const { data: queryData, isLoading, error } = useQuery<any>({
-    queryKey: ["projects", "all"],
-    queryFn: async () => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/projects`);
-      if (!response.ok) throw new Error("Failed to fetch projects");
-      return response.json();
-    },
+    queryKey: ["projects","all"],
+    
   });
 
   useEffect(() => {

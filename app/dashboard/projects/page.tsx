@@ -294,14 +294,14 @@ export default function ProjectsManagementPage() {
                 {project.description}
               </p>
               <div className="flex flex-wrap gap-1">
-                {project?.technologies?.slice(0, 3).map((tag:any) => (
+                {(project?.tags ?? []).slice(0, 3).map((tag: string) => (
                   <Badge key={tag} variant="outline" className="text-xs">
                     {tag}
                   </Badge>
                 ))}
-                {project?.technologies.length > 3 && (
+                {(project?.tags ?? []).length > 3 && (
                   <Badge variant="outline" className="text-xs">
-                    +{project.technologies.length - 3}
+                    +{(project?.tags ?? []).length - 3}
                   </Badge>
                 )}
               </div>
@@ -417,7 +417,7 @@ function ProjectDialog({
       githubUrl: project?.githubUrl ?? "",
     })
     
-    setTagsInput(project?.technologies?.join(", ") ?? "")
+    setTagsInput(project?.tags?.join(", ") ?? "")
     setResultsInput(project?.results?.join("\n") ?? "")
     setTestimonialQuote(project?.testimonial?.quote ?? "")
     setTestimonialAuthor(project?.testimonial?.author ?? "")

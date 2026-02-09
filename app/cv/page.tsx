@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useEffect, useState } from "react"
 
 const experience = [
   {
@@ -24,36 +25,21 @@ const experience = [
     company: "Hanli Company Uganda LTD",
     location: "Kampala, Uganda",
     period: "2025 - Present",
-    description: "Developing and maintaining web applications to enhance the company's online presence and customer engagement.",
-    achievements: [
-      "Creted a responsive website that increased user engagement by 30%",
-      "managed the website content and ensured regular updates",
-      "Linked the website to social media platforms to boost marketing efforts",
-    ],
+    description: "Developing and maintaining web applications to enhance the company's online presence and customer engagement.\n• Created a responsive website that increased user engagement by 30%\n• Managed the website content and ensured regular updates\n➢ Linked the website to social media platforms to boost marketing efforts",
   },
   {
     title: "Full-Stack Developer",
     company: "Business Acceleration Group (BAG)",
     location: "Kampala, Uganda",
     period: "2026",
-    description: "Built custom responsive website for the company to enhance their online presence and customer engagement.",
-    achievements: [
-      "Developed a user-friendly website that improved customer interaction",
-      "Integrated e-commerce features to facilitate online transactions",
-      "Optimized website performance for faster load times",
-    ],
+    description: "Built custom responsive website for the company to enhance their online presence and customer engagement.\n• Developed a user-friendly website that improved customer interaction\n• Integrated e-commerce features to facilitate online transactions\n➢ Optimized website performance for faster load times",
   },
   {
     title: "Full-Stack Developer",
     company: "AIO Solars LTD",
     location: "Kampala, Uganda",
     period: "2026",
-    description: "Built custom responsive website for the company to enhance their online presence and customer engagement.",
-    achievements: [
-      "Designed and implemented a modern website layout",
-      "Ensured mobile responsiveness for better accessibility",
-      "Collaborated with the marketing team to align website content with brand messaging",
-    ],
+    description: "Built custom responsive website for the company to enhance their online presence and customer engagement.\n• Designed and implemented a modern website layout\n• Ensured mobile responsiveness for better accessibility\n➢ Collaborated with the marketing team to align website content with brand messaging",
   },
 ]
 
@@ -102,7 +88,7 @@ const languages = [
 export default function CVPage() {
   // Fetch CV data from the backend
   const { data: cvData, isLoading, error } = useQuery<any>({
-    queryKey: ["resume","/"],
+    queryKey: ["resume","current"],
      
   });
 
@@ -284,7 +270,7 @@ export default function CVPage() {
             </div>
           </div>
           <Button asChild className="gap-2">
-            <a href="https://drive.google.com/file/d/1qVZyFqbAY4bglskt_udHXBTzsxoRGJHG/view?usp=drive_link" download>
+            <a href="https://drive.usercontent.google.com/download?id=1qVZyFqbAY4bglskt_udHXBTzsxoRGJHG&export=download&authuser=7" download>
               <Download className="h-4 w-4" />
               Download PDF
             </a>
@@ -319,17 +305,7 @@ export default function CVPage() {
                   </div>
                   <span className="text-sm font-medium text-muted-foreground">{job.period}</span>
                 </div>
-                <p className="mt-4 text-muted-foreground">{job.description}</p>
-                {job.achievements && (
-                  <ul className="mt-4 space-y-2">
-                    {job.achievements.map((achievement: string) => (
-                      <li key={achievement} className="flex items-start gap-2 text-sm text-muted-foreground">
-                        <span className="mt-1.5 h-1.5 w-1.5  shrink-0 rounded-full bg-accent" />
-                        {achievement}
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                <p className="mt-4 text-muted-foreground whitespace-pre-line">{job.description}</p>
               </div>
             ))}
           </div>

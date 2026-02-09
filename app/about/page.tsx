@@ -172,9 +172,9 @@ export default function AboutPage() {
             {/* Timeline Line */}
             <div className="absolute left-0 top-0 h-full w-px bg-border md:left-1/2" />
 
-            {timeline.map((item, index) => (
+            {timeline?.map((item, index:number) => (
               <div
-                key={item.year}
+                key={index}
                 className={`relative mb-8 flex flex-col md:flex-row animate-fade-in ${
                   index % 2 === 0 ? "md:flex-row-reverse" : ""
                 }`}
