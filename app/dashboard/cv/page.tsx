@@ -188,15 +188,26 @@ export default function CVManagementPage() {
       if (editDialog.isNew) {
        const payLoad = {experience:data, id:resume._id||""}
         await apiRequest("POST", `/resume/experience/create`,payLoad)
+        toast({
+          title: "✓ Experience Added",
+          description: `"${data.title}" has been added to your experience.`,
+          duration: 3000,
+        })
       } else {
          const index = experience.findIndex(exp => (exp as any)._id === data._id)
          await apiRequest("PUT", `/resume/update/${resume?._id }/${editDialog?.type}/${index}`, {experience:data})
+        toast({
+          title: "✓ Experience Updated",
+          description: `"${data.title}" has been updated successfully.`,
+          duration: 3000,
+        })
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
-        title: "Error",
-        description: "An error occurred while saving experience. Please try again.",
+        title: "✗ Save Failed",
+        description: error?.message || "An error occurred while saving experience. Please try again.",
         variant: "destructive",
+        duration: 5000,
       })
     } finally {
       setLoading(false)
@@ -212,15 +223,26 @@ export default function CVManagementPage() {
       if (editDialog.isNew) {
        const payLoad = {education:data, id:resume._id||""}
         await apiRequest("POST", `/resume/education/create`,payLoad)
+        toast({
+          title: "✓ Education Added",
+          description: `"${data.degree}" has been added to your education.`,
+          duration: 3000,
+        })
       } else {
         const index = education.findIndex(edu => (edu as any)._id === data._id)
          await apiRequest("PUT", `/resume/update/${resume?._id }/${editDialog?.type}/${index}`, {education:data})
+        toast({
+          title: "✓ Education Updated",
+          description: `"${data.degree}" has been updated successfully.`,
+          duration: 3000,
+        })
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
-        title: "Error",
-        description: "An error occurred while saving education. Please try again.",
+        title: "✗ Save Failed",
+        description: error?.message || "An error occurred while saving education. Please try again.",
         variant: "destructive",
+        duration: 5000,
       })
     } finally {
       setLoading(false)
@@ -236,15 +258,26 @@ export default function CVManagementPage() {
       if (editDialog.isNew) {
        const payLoad = {skill:data, id:resume._id||""}
         await apiRequest("POST", `/resume/skill/create`,payLoad)
+        toast({
+          title: "✓ Skill Added",
+          description: `"${data.name}" has been added to your skills.`,
+          duration: 3000,
+        })
       } else {
         const index = skills.findIndex(skill => (skill as any)._id === data._id)
          await apiRequest("PUT", `/resume/update/${resume?._id }/${editDialog?.type}/${index}`, {skill:data})
+        toast({
+          title: "✓ Skill Updated",
+          description: `"${data.name}" has been updated successfully.`,
+          duration: 3000,
+        })
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
-        title: "Error",
-        description: "An error occurred while saving skills. Please try again.",
+        title: "✗ Save Failed",
+        description: error?.message || "An error occurred while saving skills. Please try again.",
         variant: "destructive",
+        duration: 5000,
       })
     } finally {
       setLoading(false)
@@ -260,15 +293,26 @@ export default function CVManagementPage() {
       if (editDialog.isNew) {
        const payLoad = {certification:data, id:resume._id||""}
         await apiRequest("POST", `/resume/certification/create`,payLoad)
+        toast({
+          title: "✓ Certification Added",
+          description: `"${data.name}" has been added to your certifications.`,
+          duration: 3000,
+        })
       } else {
         const index = certifications.findIndex(cert => (cert as any)._id === data._id)
          await apiRequest("PUT", `/resume/update/${resume?._id }/${editDialog?.type}/${index}`, {certification:data})
+        toast({
+          title: "✓ Certification Updated",
+          description: `"${data.name}" has been updated successfully.`,
+          duration: 3000,
+        })
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
-        title: "Error",
-        description: "An error occurred while saving certifications. Please try again.",
+        title: "✗ Save Failed",
+        description: error?.message || "An error occurred while saving certifications. Please try again.",
         variant: "destructive",
+        duration: 5000,
       })
     } finally {
       setLoading(false)
@@ -284,16 +328,27 @@ export default function CVManagementPage() {
       if (editDialog.isNew) {
        const payLoad = {language:data, id:resume._id||""}
         await apiRequest("POST", `/resume/language/create`,payLoad)
+        toast({
+          title: "✓ Language Added",
+          description: `"${data.name}" has been added to your languages.`,
+          duration: 3000,
+        })
       } else {
        
         const index = languages.findIndex(lang => (lang as any)._id === data._id)
          await apiRequest("PUT", `/resume/update/${resume?._id }/${editDialog?.type}/${index}`, {language:data})
+        toast({
+          title: "✓ Language Updated",
+          description: `"${data.name}" has been updated successfully.`,
+          duration: 3000,
+        })
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
-        title: "Error",
-        description: "An error occurred while saving languages. Please try again.",
+        title: "✗ Save Failed",
+        description: error?.message || "An error occurred while saving languages. Please try again.",
         variant: "destructive",
+        duration: 5000,
       })
     } finally {
       setLoading(false)
@@ -349,8 +404,18 @@ export default function CVManagementPage() {
           break
         }
       }
-    } catch (err) {
-      toast({ title: "Error", description: "Failed to delete item.", variant: "destructive" })
+      toast({
+        title: "✓ Item Deleted",
+        description: `The ${deleteDialog.type} has been removed.`,
+        duration: 3000,
+      })
+    } catch (err: any) {
+      toast({
+        title: "✗ Delete Failed",
+        description: err?.message || "Failed to delete item. Please try again.",
+        variant: "destructive",
+        duration: 5000,
+      })
     } finally {
       setDeleting(null)
       setDeleteDialog({ type: null, id: null, name: "" })
@@ -798,7 +863,7 @@ export default function CVManagementPage() {
         isNew={editDialog.isNew}
         onSave={(data) => {
           saveExperience(data)
-          // setEditDialog({ type: null, data: null, isNew: false })
+          setEditDialog({ type: null, data: null, isNew: false })
         }}
         loading={loading}
       />
@@ -810,7 +875,7 @@ export default function CVManagementPage() {
         isNew={editDialog.isNew}
         onSave={(data) => {
           saveEducation(data)
-          // setEditDialog({ type: null, data: null, isNew: false })
+          setEditDialog({ type: null, data: null, isNew: false })
         }}
         loading={loading}
 
@@ -823,7 +888,7 @@ export default function CVManagementPage() {
         isNew={editDialog.isNew}
         onSave={(data) => {
           saveSkills(data)
-          // setEditDialog({ type: null, data: null, isNew: false })
+          setEditDialog({ type: null, data: null, isNew: false })
         }}
         loading={loading}
 
@@ -836,7 +901,7 @@ export default function CVManagementPage() {
         isNew={editDialog.isNew}
         onSave={(data) => {
           saveCertification(data)
-          // setEditDialog({ type: null, data: null, isNew: false })
+          setEditDialog({ type: null, data: null, isNew: false })
         }}
         loading={loading}
       />
@@ -848,7 +913,7 @@ export default function CVManagementPage() {
         isNew={editDialog.isNew}
         onSave={(data) => {
           saveLanguages(data)
-          // setEditDialog({ type: null, data: null, isNew: false })
+          setEditDialog({ type: null, data: null, isNew: false })
         }}
         loading={loading}
       />

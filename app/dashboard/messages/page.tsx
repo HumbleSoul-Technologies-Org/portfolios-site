@@ -175,15 +175,17 @@ export default function MessagesPage() {
       setSelectedMessage(m => m && m._id === id ? { ...m, starred: !m.starred } : m)
       setMessages(messages.map(m => m._id === id ? { ...m, starred: !m.starred } : m))
       toast({
-        title: "Success",
-        description: "Message added to favourites ",
+        title: "✓ Added to Favorites",
+        description: "Message starred for quick access.",
+        duration: 2500,
       })
     } catch (error) {
       
       toast({
-        title: "Error",
+        title: "✗ Star Failed",
         description: "Failed to star message. Please try again.",
         variant: "destructive",
+        duration: 4000,
       })
     }
   }
@@ -194,15 +196,17 @@ export default function MessagesPage() {
       setMessages(messages.map(m => m._id === id ? { ...m, archived: true } : m))
       if (selectedMessage?._id === id) setSelectedMessage(null)
       toast({
-        title: "Success",
-        description: "Message archived.",
+        title: "✓ Message Archived",
+        description: "Message moved to archive.",
+        duration: 2500,
       })
     } catch (error) {
       
       toast({
-        title: "Error",
+        title: "✗ Archive Failed",
         description: "Failed to archive message. Please try again.",
         variant: "destructive",
+        duration: 4000,
       })
     }
   }
@@ -215,17 +219,17 @@ export default function MessagesPage() {
       if (selectedMessage?._id === id) setSelectedMessage(null)
       setDeleteDialog(null)
       toast({
-        title: "Success",
-        description: "Message deleted successfully.",
+        title: "✓ Message Deleted",
+        description: "The message has been permanently removed.",
+        duration: 2500,
       })
-    } catch (error) {
-      console.log('====================================' )
-      console.log(error)
-      console.log('====================================' )
+    } catch (error: any) {
+      console.error('Delete message error:', error)
       toast({
-        title: "Error",
-        description: "Failed to delete message. Please try again.",
+        title: "✗ Delete Failed",
+        description: error?.message || "Failed to delete message. Please try again.",
         variant: "destructive",
+        duration: 4000,
       })
     } finally {
       setIsDeleting(false)
@@ -252,8 +256,9 @@ export default function MessagesPage() {
       await apiRequest("POST", `/contact/message/reply/${id}`, data)
       setSelectedMessage(m => m && m._id === id ? { ...m, reply: { reply: replyText, senderName: "Me", senderEmail: m.email } } : m)
       toast({
-        title: "Success",
-        description: "Reply sent successfully.",
+        title: "✓ Reply Sent",
+        description: "Your reply has been sent successfully.",
+        duration: 2500,
       })
       setReplyText("")
       setReplyDialog(null)

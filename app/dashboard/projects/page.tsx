@@ -104,15 +104,17 @@ export default function ProjectsManagementPage() {
       setProjects(projects.filter(p => p._id !== id))
       setDeleteProject(null)
       toast({
-        title: "Success",
-        description: "Project deleted successfully.",
+        title: "✓ Project Deleted",
+        description: "The project has been removed from your portfolio.",
+        duration: 3000,
       })
-    } catch (error) {
-       
+    } catch (error: any) {
+      const errorMsg = error?.response?.data?.message || "Failed to delete project. Please try again."
       toast({
-        title: "Error",
-        description: "Failed to delete project. Please try again.",
+        title: "❌ Deletion Failed",
+        description: errorMsg,
         variant: "destructive",
+        duration: 5000,
       })
     } finally {
       setDeleting(false)
@@ -133,28 +135,33 @@ export default function ProjectsManagementPage() {
     try {
       if (projectData._id && projects.some(p => p._id === projectData._id)) {
         // Update existing project
-         await apiRequest("PUT", `/projects/update/${projectData._id}`, projectData)
+        await apiRequest("PUT", `/projects/update/${projectData._id}`, projectData)
         setProjects(projects.map(p => p._id === projectData._id ? projectData : p))
         toast({
-          title: "Success",
-          description: "Project updated successfully.",
+          title: "✓ Project Updated",
+          description: `"${projectData.title}" has been updated successfully.`,
+          duration: 3000,
         })
       } else {
         // Create new project
-        const response = await apiRequest("POST", "/projects/create", projectData)
-        setProjects([projectData, ...projects])
+        await apiRequest("POST", "/projects/create", projectData)
+        setProjects([...projects, projectData])
         toast({
-          title: "Success",
-          description: "Project added successfully.",
+          title: "✓ Project Created",
+          description: `"${projectData.title}" has been added to your portfolio.`,
+          duration: 3000,
         })
       }
       setIsAddDialogOpen(false)
       setEditingProject(null)
-    } catch (error) {
+    } catch (error: any) {
+      const errorMsg = error?.response?.data?.message || "Failed to save project. Please try again."
       console.error("Error saving project:", error)
       toast({
-        title: "Error",
-        description: "Failed to save project. Please try again.",
+        title: "❌ Save Failed",
+        description: errorMsg,
+        variant: "destructive",
+        duration: 5000,
       })
     }
   }

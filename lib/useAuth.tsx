@@ -88,7 +88,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}/admin/login`, 
-        { email: username, password }
+        { email: username, password },
+        { timeout: 10000 } // 10 second timeout instead of indefinite
       );
       // login response received
       

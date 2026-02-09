@@ -8,6 +8,7 @@ import * as z from "zod"
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/lib/useAuth";
 
 function LoginForm() {
@@ -43,35 +44,72 @@ function LoginForm() {
       await login(values.username, values.password);
     } catch (err: any) {
       setError(err?.message || "Login failed");
-    } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="w-full max-w-md space-y-6 rounded-lg border border-border bg-card p-6"
+        className="w-full max-w-md space-y-6 rounded-lg border border-border bg-card p-6 sm:p-8 animate-fade-in"
       >
-        <h1 className="text-lg font-semibold">Login</h1>
-        {error && <div className="text-sm text-destructive">{error}</div>}
+        <div className="space-y-2">
+          <h1 className="text-2xl font-bold tracking-tight">Welcome Back</h1>
+          <p className="text-sm text-muted-foreground">Sign in to your account to continue</p>
+        </div>
 
-        <div>
+        {error && (
+          <div className="rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3">
+            <p className="text-sm text-destructive font-medium">{error}</p>
+          </div>
+        )}
+
+        <div className="space-y-2">
           <Label htmlFor="username">Username</Label>
-          <Input className="mt-4" id="username" {...register("username")} />
+          <Input 
+            className="mt-2" 
+            id="username" 
+            disabled={submitting}
+            placeholder="Enter your username"
+            {...register("username")} 
+          />
         </div>
 
-        <div>
+        <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
-          <Input className="mt-4" id="password" type="password" {...register("password")} />
+          <Input 
+            className="mt-2" 
+            id="password" 
+            type="password" 
+            disabled={submitting}
+            placeholder="Enter your password"
+            {...register("password")} 
+          />
         </div>
 
-        <div className="flex items-center justify-between">
-          <Button type="submit" disabled={submitting || !formState.isValid} className="w-full">
-            {submitting ? "Signing in..." : "Sign in"}
-          </Button>
-        </div>
+        <Button 
+          type="submit" 
+          disabled={submitting || !formState.isValid} 
+          className="w-full gap-2 transition-all"
+        >
+          {submitting ? (
+            <>
+              <Spinner className="h-4 w-4" />
+              <span>Signing in...</span>
+            </>
+          ) : (
+            "Sign In"
+          )}
+        </Button>
+
+        {submitting && (
+          <div className="rounded-lg border border-border/50 bg-muted/30 px-4 py-3">
+            <p className="text-xs text-muted-foreground text-center">
+              ⏳ Authenticating your credentials. Please wait...
+            </p>
+          </div>
+        )}
       </form>
     </div>
   );
