@@ -103,7 +103,7 @@ export default function ProjectsManagementPage() {
     setProjects(Array.isArray(projectsData) ? projectsData : []);
   }, [Projects]);
 
-  const filteredProjects = (Array.isArray(projects) ? projects : []).filter((project:any) => {
+  const filteredProjects = projects.filter((project:any) => {
     const matchesSearch = project?.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       project?.description.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = categoryFilter === "all" || project?.category === categoryFilter
@@ -144,7 +144,7 @@ export default function ProjectsManagementPage() {
     ))
   }
 
-  const handleSaveProject = async (projectData: Project) => {
+  const handleSaveProject = async (projectData: Project) => { 
     try {
       if (projectData._id && projects.some((p:any) => p._id === projectData._id)) {
         // Update existing project
