@@ -356,7 +356,7 @@ function ProjectDialog({
   onSave: (project: Project) => Promise<void>
 }) {
   const [imagePreview, setImagePreview] = useState<string>(project?.image?.url ?? "")
-  const [tagsInput, setTagsInput] = useState<string>(project?.technologies?.join(", ") ??  "")
+  const [tagsInput, setTagsInput] = useState<string>(project?.tags?.join(", ") ??  "")
   const [resultsInput, setResultsInput] = useState<string>(
     project?.results?.join("\n") ?? ""
   )
@@ -395,7 +395,7 @@ function ProjectDialog({
 
   // Reset form when opening or when editing a new project
   React.useEffect(() => {
-    setTagsInput(project?.technologies?.join(", ") ?? "")
+    setTagsInput(project?.tags?.join(", ") ?? "")
     setResultsInput(project?.results?.join("\n") ?? "")
     setTestimonialQuote(project?.testimonial?.quote ?? "")
     setTestimonialAuthor(project?.testimonial?.author ?? "")

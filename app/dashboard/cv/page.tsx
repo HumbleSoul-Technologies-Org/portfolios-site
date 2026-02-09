@@ -103,7 +103,7 @@ interface Skill {
   _id: string
   name: string
   level: "Beginner" | "Intermediate" | "Advanced" | "Expert"
-  category: string
+  category: "Technical Skills" | "Soft Skills" | "Professional Skills" | "Other"
 }
 
 interface Certification {
@@ -117,7 +117,7 @@ interface Certification {
 interface Language {
   _id: string
   name: string
-  level: string
+  level: "Beginner" | "Intermediate" | "Advanced" | "Expert"
 }
 
  
@@ -646,7 +646,7 @@ export default function CVManagementPage() {
             </div>
             <Button onClick={() => setEditDialog({ 
               type: "skill", 
-              data: {_id:"", name: "", level: "",  },
+              data: {_id:"", name: "", level: "Intermediate", category: "Technical Skills"},
               isNew: true 
             })}>
               <Plus className="h-4 w-4 mr-2" />
@@ -790,7 +790,7 @@ export default function CVManagementPage() {
           <div className="flex justify-end">
             <Button onClick={() => setEditDialog({ 
               type: "language", 
-              data: {_id:"", name: "", level: "",},
+              data: {_id:"", name: "", level: "Intermediate"},
               isNew: true 
             })}>
               <Plus className="h-4 w-4 mr-2" />
@@ -1186,7 +1186,7 @@ function SkillDialog({ open, onOpenChange, data, isNew, onSave, loading }: {
   
   if (!open) return null
   
-  const handleSaveSkill = async (values: SkillFormData) => {
+  const handleSaveSkill = (values: SkillFormData) => {
     onSave({
       ...data,
       ...values,
@@ -1377,7 +1377,7 @@ function LanguageDialog({ open, onOpenChange, data, isNew, onSave, loading }: {
   
   if (!open) return null
   
-  const handleSaveLanguage = async (values: LanguageFormData) => {
+  const handleSaveLanguage = (values: LanguageFormData) => {
     onSave({
       ...data,
       ...values,
