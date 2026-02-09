@@ -134,7 +134,7 @@ export default function CVManagementPage() {
   const [deleting, setDeleting] = useState<string | null>(null)
 
   const { data:cv, error } = useQuery<any>({
-    queryKey: ["resume"],
+    queryKey: ["resume","current"],
   })
   
   const [editDialog, setEditDialog] = useState<{
@@ -1158,7 +1158,7 @@ function SkillDialog({ open, onOpenChange, data, isNew, onSave, loading }: {
   onSave: (data: Skill) => void
   loading: boolean
 }) {
-  const { register, handleSubmit, control, formState, reset } = useForm<SkillFormData>({
+  const { register, handleSubmit, formState, reset } = useForm<SkillFormData>({
     resolver: zodResolver(skillSchema),
     mode: "onChange",
     defaultValues: {
@@ -1352,7 +1352,7 @@ function LanguageDialog({ open, onOpenChange, data, isNew, onSave, loading }: {
   onSave: (data: Language) => void
   loading: boolean
 }) {
-  const { register, handleSubmit, control, formState, reset } = useForm<LanguageFormData>({
+  const { register, handleSubmit, formState, reset } = useForm<LanguageFormData>({
     resolver: zodResolver(languageSchema),
     mode: "onChange",
     defaultValues: {
