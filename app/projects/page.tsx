@@ -24,7 +24,7 @@ export default function ProjectsPage() {
   useEffect(() => {
     if (queryData) {
       // Handle both array and object response formats
-      let projectsData = queryData.data || queryData;
+      let projectsData = queryData?.data?.projects || queryData;
       if (Array.isArray(projectsData)) {
         setProjects(projectsData);
       } else if (projectsData) {
