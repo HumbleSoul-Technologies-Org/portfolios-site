@@ -168,13 +168,13 @@ export default function ServicesPage() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         {/* Page Header */}
         <div className="mb-16 text-center">
-          <p className="text-sm font-medium uppercase tracking-widest text-accent">
+          <p className="text-sm font-medium uppercase tracking-widest text-accent animate-fade-in">
             Services
           </p>
-          <h1 className="mt-2 text-balance text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+          <h1 className="mt-2 text-balance text-4xl font-bold tracking-tight text-foreground sm:text-5xl animate-fade-in [animation-delay:100ms]">
             How I Can Help
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
+          <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground animate-fade-in [animation-delay:200ms]">
             From concept to deployment, I offer end-to-end development services 
             to bring your digital ideas to life.
           </p>
@@ -182,8 +182,8 @@ export default function ServicesPage() {
 
         {/* Main Services */}
         <div className="mb-24 grid gap-8 lg:grid-cols-3">
-          {services.map((service) => (
-            <Card key={service.title} className="flex flex-col border-border/50 transition-all hover:border-accent/30 hover:shadow-lg">
+          {services.map((service, idx) => (
+            <Card key={service.title} className="flex flex-col border-border/50 transition-all hover:border-accent/30 hover:shadow-lg animate-fade-in" style={{ animationDelay: `${300 + idx * 100}ms` }}>
               <CardHeader>
                 <div className="mb-4 inline-flex w-fit rounded-lg bg-accent/10 p-3 text-accent">
                   <service.icon className="h-6 w-6" />

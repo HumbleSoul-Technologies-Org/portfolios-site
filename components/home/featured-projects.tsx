@@ -29,7 +29,7 @@ export function FeaturedProjects() {
     <section className="py-24">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         {/* Section Header */}
-        <div className="mb-16 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
+        <div className="mb-16 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end animate-fade-in">
           <div>
             <p className="text-sm font-medium uppercase tracking-widest text-accent">
               Portfolio
@@ -41,7 +41,7 @@ export function FeaturedProjects() {
               A selection of recent work showcasing my approach to solving complex problems.
             </p>
           </div>
-          <Button asChild variant="outline" className="gap-2 bg-transparent">
+          <Button asChild variant="outline" className="gap-2 bg-transparent transition-all hover:scale-105 active:scale-95">
             <Link href="/projects">
               View All Projects
               <ArrowRight className="h-4 w-4" />
@@ -54,7 +54,8 @@ export function FeaturedProjects() {
           {(isLoading ? Array.from({ length: 3 }) : featuredProjects.slice(0, 4)).map((project: any, idx: number) => (
             <article
               key={isLoading ? `skeleton-${idx}` : project.id}
-              className="group flex flex-col overflow-hidden rounded-xl border border-border/50 bg-card transition-all hover:border-accent/30 hover:shadow-lg"
+              className="group flex flex-col overflow-hidden rounded-xl border border-border/50 bg-card transition-all hover:border-accent/30 hover:shadow-lg hover:shadow-accent/20 animate-fade-in"
+              style={{ animationDelay: `${idx * 100}ms` }}
             >
               {/* Project Image or Skeleton */}
               <div className="relative aspect-video overflow-hidden bg-muted">

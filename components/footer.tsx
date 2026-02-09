@@ -25,7 +25,7 @@ export function Footer() {
     <footer className="border-t border-border/40 bg-secondary/30">
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
         <div className="flex flex-col items-center gap-8 md:flex-row md:justify-between">
-          <div className="flex flex-col items-center gap-4 md:items-start">
+          <div className="flex flex-col items-center gap-4 md:items-start animate-fade-in">
             <Link 
               href="/" 
               className="text-xl flex items-center gap-2 font-semibold tracking-tight text-foreground"
@@ -39,7 +39,7 @@ export function Footer() {
             </p>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-6">
+          <div className="flex flex-wrap justify-center gap-6 animate-fade-in [animation-delay:100ms]">
             {footerLinks.map((link) => (
               <Link
                 key={link.href}
@@ -51,8 +51,8 @@ export function Footer() {
             ))}
           </div>
 
-          <div className="flex items-center gap-4">
-            {socialLinks.map((social) => (
+          <div className="flex items-center gap-4 animate-fade-in [animation-delay:200ms]">
+            {socialLinks.map((social, idx) => (
               <a
                 key={social.label}
                 href={social.href}

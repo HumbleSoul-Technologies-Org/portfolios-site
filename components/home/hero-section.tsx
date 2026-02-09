@@ -59,7 +59,7 @@ export function HeroSection() {
       <div className="mx-auto max-w-6xl px-4 py-24 sm:px-6 sm:py-32 lg:py-40">
         <div className="flex flex-col items-center text-center">
           {/* Status Badge */}
-          <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-1.5 text-sm text-accent">
+          <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-1.5 text-sm text-accent animate-fade-in">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
@@ -68,7 +68,7 @@ export function HeroSection() {
           </div>
 
           {/* Main Heading */}
-          <h1 className=" text-transparent bg-clip-text bg-linear-to-r from-cyan-400 via-white to-orange-500 max-w-4xl text-balance text-4xl font-bold tracking-tight   sm:text-5xl lg:text-6xl">
+          <h1 className="animate-fade-in text-transparent bg-clip-text bg-linear-to-r from-cyan-400 via-white to-orange-500 max-w-4xl text-balance text-4xl font-bold tracking-tight   sm:text-5xl lg:text-6xl [animation-delay:100ms]">
             Building digital products that
              
             <span className="relative ml-2 inline-block">
@@ -78,20 +78,20 @@ export function HeroSection() {
           </h1>
 
           {/* Subheading */}
-          <p className="mt-6 max-w-2xl text-pretty text-lg text-muted-foreground sm:text-xl">
+          <p className="mt-6 max-w-2xl text-pretty text-lg text-muted-foreground sm:text-xl animate-fade-in [animation-delay:200ms]">
             Full-stack developer specializing in Web Development, Mobile Apps, and 
             Software Systems. Turning complex ideas into elegant, scalable solutions.
           </p>
 
           {/* CTA Buttons */}
-          <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:gap-4">
-            <Button asChild size="lg" className="gap-2">
+          <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:gap-4 animate-fade-in [animation-delay:300ms]">
+            <Button asChild size="lg" className="gap-2 transition-all hover:scale-105 active:scale-95">
               <Link href="/projects">
                 View My Work
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
-            <Button asChild variant="outline" size="lg" className="gap-2 bg-transparent">
+            <Button asChild variant="outline" size="lg" className="gap-2 bg-transparent transition-all hover:scale-105 active:scale-95">
               <Link href="/cv">
                 <Download className="h-4 w-4" />
                 Download CV

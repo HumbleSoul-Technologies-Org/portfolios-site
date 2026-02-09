@@ -128,19 +128,20 @@ export default function AboutPage() {
         {/* Values Section */}
         <section className="mb-24">
           <div className="mb-12 text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-foreground">
+            <h2 className="text-3xl font-bold tracking-tight text-foreground animate-fade-in">
               What Drives Me
             </h2>
-            <p className="mt-4 text-muted-foreground">
+            <p className="mt-4 text-muted-foreground animate-fade-in [animation-delay:100ms]">
               Core values that guide my work and collaboration.
             </p>
           </div>
 
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {values.map((value) => (
+            {values.map((value, idx) => (
               <div
                 key={value.title}
-                className="rounded-xl border border-border/50 bg-card p-6 text-center transition-all hover:border-accent/30 hover:shadow-lg"
+                className="rounded-xl border border-border/50 bg-card p-6 text-center transition-all hover:border-accent/30 hover:shadow-lg animate-fade-in"
+                style={{ animationDelay: `${200 + idx * 75}ms` }}
               >
                 <div className="mx-auto mb-4 inline-flex rounded-lg bg-accent/10 p-3 text-accent">
                   <value.icon className="h-6 w-6" />
@@ -159,10 +160,10 @@ export default function AboutPage() {
         {/* Timeline Section */}
         <section>
           <div className="mb-12 text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-foreground">
+            <h2 className="text-3xl font-bold tracking-tight text-foreground animate-fade-in">
               My Journey
             </h2>
-            <p className="mt-4 text-muted-foreground">
+            <p className="mt-4 text-muted-foreground animate-fade-in [animation-delay:100ms]">
               A timeline of my professional experience and education.
             </p>
           </div>
@@ -174,9 +175,10 @@ export default function AboutPage() {
             {timeline.map((item, index) => (
               <div
                 key={item.year}
-                className={`relative mb-8 flex flex-col md:flex-row ${
+                className={`relative mb-8 flex flex-col md:flex-row animate-fade-in ${
                   index % 2 === 0 ? "md:flex-row-reverse" : ""
                 }`}
+                style={{ animationDelay: `${200 + index * 100}ms` }}
               >
                 {/* Timeline Dot */}
                 <div className="absolute left-0 top-0 h-3 w-3 -translate-x-1 rounded-full bg-accent md:left-1/2 md:-translate-x-1/2" />

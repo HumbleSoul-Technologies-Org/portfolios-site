@@ -10,8 +10,10 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "@/hooks/use-toast"
-import { log } from "console"
 import { apiRequest } from "@/lib/queryClient"
+import { useForm, Controller } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
 
 const projectTypes = [
   { value: "web", label: "Web Development" },
@@ -29,58 +31,59 @@ const budgetRanges = [
   { value: "50k-plus", label: "$50,000+" },
 ]
 
- interface FormData {
-    name: string  
-    email: string
-    projectType?: string
-    budget?: string
-    subject: string
-    message: string
-  }
+const contactSchema = z.object({
+  name: z.string().min(2, "Please enter your name"),
+  email: z.string().email("Please enter a valid email"),
+  projectType: z.string().nonempty("Select a project type"),
+  budget: z.string().optional(),
+  subject: z.string().min(3, "Subject is too short"),
+  message: z.string().min(10, "Message should be at least 10 characters"),
+})
+
+type FormData = z.infer<typeof contactSchema>
 
 export function ContactForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
- 
 
-  const initialFormData: FormData = {
-    name: "",
-    email: "",
-    projectType: undefined,
-    budget: undefined,
-    subject: "",
-    message: "",
-  }
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    formState: { errors },
+  } = useForm<FormData>({
+    resolver: zodResolver(contactSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      projectType: "",
+      budget: "",
+      subject: "",
+      message: "",
+    },
+  })
 
-  const [formData, setFormData] = useState<FormData>(initialFormData)
-
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
+  async function onSubmit(values: FormData) {
     setIsSubmitting(true)
-
     try {
-      await apiRequest("POST", "/contact/message/create", formData)
+      await apiRequest("POST", "/contact/message/create", values)
       toast({
         title: "Message Sent",
         description: "Thank you for reaching out! I'll get back to you within 24 hours.",
       })
       setSubmitted(true)
-      setFormData(initialFormData)
+      reset()
     } catch (error) {
-      console.log('====================================');
-      console.log(error);
-      console.log('====================================');
+      console.error(error)
       toast({
         title: "Error",
         description: "Failed to send message. Please try again.",
         variant: "destructive",
       })
     } finally {
-    setIsSubmitting(false)
-      
+      setIsSubmitting(false)
     }
-
-    
   }
 
   if (submitted) {
@@ -105,63 +108,72 @@ export function ContactForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div className="grid gap-6 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="name">Name</Label>
           <Input
             id="name"
-            name="name"
+            {...register("name")}
             placeholder="Your name"
-            value={formData.name}
-            onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
-            required
           />
+          {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
         </div>
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input
             id="email"
-            name="email"
+            {...register("email")}
             type="email"
             placeholder="your@email.com"
-            value={formData.email}
-            onChange={(e) => setFormData((p) => ({ ...p, email: e.target.value }))}
-            required
           />
+          {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
         </div>
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="projectType">Project Type</Label>
-          <Select name="projectType" required value={formData.projectType} onValueChange={(val) => setFormData((p) => ({ ...p, projectType: val }))}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select project type" />
-            </SelectTrigger>
-            <SelectContent>
-              {projectTypes.map((type) => (
-                <SelectItem key={type.value} value={type.value}>
-                  {type.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Controller
+            control={control}
+            name="projectType"
+            render={({ field }) => (
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select project type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projectTypes.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
+          {errors.projectType && <p className="text-sm text-destructive">{errors.projectType.message}</p>}
         </div>
         <div className="space-y-2">
           <Label htmlFor="budget">Budget Range</Label>
-          <Select name="budget" value={formData.budget} onValueChange={(val) => setFormData((p) => ({ ...p, budget: val }))}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select budget range" />
-            </SelectTrigger>
-            <SelectContent>
-              {budgetRanges.map((range) => (
-                <SelectItem key={range.value} value={range.value}>
-                  {range.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Controller
+            control={control}
+            name="budget"
+            render={({ field }) => (
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select budget range" />
+                </SelectTrigger>
+                <SelectContent>
+                  {budgetRanges.map((range) => (
+                    <SelectItem key={range.value} value={range.value}>
+                      {range.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
         </div>
       </div>
 
@@ -169,25 +181,21 @@ export function ContactForm() {
         <Label htmlFor="subject">Subject</Label>
         <Input
           id="subject"
-          name="subject"
+          {...register("subject")}
           placeholder="Brief description of your project"
-          value={formData.subject}
-          onChange={(e) => setFormData((p) => ({ ...p, subject: e.target.value }))}
-          required
         />
+        {errors.subject && <p className="text-sm text-destructive">{errors.subject.message}</p>}
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="message">Message</Label>
         <Textarea
           id="message"
-          name="message"
+          {...register("message")}
           placeholder="Tell me about your project, goals, and timeline..."
           rows={6}
-          value={formData.message}
-          onChange={(e) => setFormData((p) => ({ ...p, message: e.target.value }))}
-          required
         />
+        {errors.message && <p className="text-sm text-destructive">{errors.message.message}</p>}
       </div>
 
       <Button type="submit" className="w-full gap-2" disabled={isSubmitting}>

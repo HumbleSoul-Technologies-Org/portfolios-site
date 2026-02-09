@@ -5,6 +5,9 @@ import React from "react"
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import { useForm, Controller } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
 import { 
   Plus, 
   Search, 
@@ -53,6 +56,19 @@ import { File } from "buffer"
 import { toast } from "@/hooks/use-toast"
 import axios from "axios"
 import { useQuery } from "@tanstack/react-query"
+
+const projectFormSchema = z.object({
+  title: z.string().min(1, "Title is required").min(3, "Title must be at least 3 characters"),
+  category: z.enum(["web", "mobile", "software"]),
+  description: z.string().min(1, "Description is required").min(10, "Description must be at least 10 characters"),
+  longDescription: z.string().min(1, "Long description is required").min(20, "Long description must be at least 20 characters"),
+  year: z.string().min(4, "Year must be 4 digits").max(4, "Year must be 4 digits"),
+  client: z.string().optional(),
+  liveUrl: z.string().url("Invalid URL").optional().or(z.literal("")),
+  githubUrl: z.string().url("Invalid GitHub URL").optional().or(z.literal("")),
+})
+
+type ProjectFormData = z.infer<typeof projectFormSchema>
 
 export default function ProjectsManagementPage() {
   const [projects, setProjects] = useState<any[]>([])
@@ -146,10 +162,10 @@ export default function ProjectsManagementPage() {
   return (
     <div className="p-6 lg:p-8">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8 animate-fade-in">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Projects</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-3xl font-bold tracking-tight animate-fade-in [animation-delay:50ms]">Projects</h1>
+          <p className="text-muted-foreground mt-1 animate-fade-in [animation-delay:100ms]">
             Manage your portfolio projects
           </p>
         </div>
@@ -186,8 +202,8 @@ export default function ProjectsManagementPage() {
 
       {/* Projects Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {filteredProjects.map((project) => (
-          <Card key={project.id} className="overflow-hidden pt-0 group">
+        {filteredProjects.map((project, idx) => (
+          <Card key={project.id} className="overflow-hidden pt-0 group animate-fade-in" style={{ animationDelay: `${idx * 75}ms` }}>
             <div className="relative aspect-video bg-muted">
               <Image
                 loading="lazy"
@@ -333,11 +349,14 @@ function ProjectDialog({
   onSave: (project: Project) => Promise<void>
 }) {
   const [imagePreview, setImagePreview] = useState<string>(project?.image?.url ?? "")
-  const [formData, setFormData] = useState<Record<string, any>>(project  ?? {})
   const [tagsInput, setTagsInput] = useState<string>(project?.technologies?.join(", ") ??  "")
   const [resultsInput, setResultsInput] = useState<string>(
     project?.results?.join("\n") ?? ""
   )
+  const [duration, setDuration] = useState<string>(project?.duration ?? "")
+  const [featured, setFeatured] = useState<boolean>(project?.featured ?? false)
+  const [challenge, setChallenge] = useState<string>(project?.challenge ?? "")
+  const [solution, setSolution] = useState<string>(project?.solution ?? "")
   const [testimonialQuote, setTestimonialQuote] = useState<string>(
     project?.testimonial?.quote ??  ""
   )
@@ -352,9 +371,23 @@ function ProjectDialog({
   const [loading, setLoading] = useState<boolean>(false)
   const [isUploading, setIsUploading] = useState<boolean>(false)
 
+  const { register, handleSubmit, watch, control, formState } = useForm<ProjectFormData>({
+    resolver: zodResolver(projectFormSchema),
+    mode: "onChange",
+    defaultValues: {
+      title: project?.title ?? "",
+      category: project?.category ?? "web",
+      description: project?.description ?? "",
+      longDescription: project?.longDescription ?? "",
+      year: project?.year ?? "",
+      client: project?.client ?? "",
+      liveUrl: project?.liveUrl ?? "",
+      githubUrl: project?.githubUrl ?? "",
+    },
+  })
+
   // Reset form when opening or when editing a new project
   React.useEffect(() => {
-    setFormData(project ??  {})
     setTagsInput(project?.technologies?.join(", ") ?? "")
     setResultsInput(project?.results?.join("\n") ?? "")
     setTestimonialQuote(project?.testimonial?.quote ?? "")
@@ -368,7 +401,6 @@ function ProjectDialog({
     reader.onload = (e) => {
       const result = e.target?.result as string
       setImagePreview(result)
-      setFormData({ ...formData, image: result })
     }
     reader.readAsDataURL(file)
     setSelectedImage(file)
@@ -412,8 +444,7 @@ function ProjectDialog({
     e.stopPropagation()
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit_form = async (values: ProjectFormData) => {
     setLoading(true)
     try {
       // upload image first (if a new image was selected)
@@ -423,10 +454,14 @@ function ProjectDialog({
       }
 
       const payload: any = {
-        ...formData,
+        ...values,
         id: project?._id,
         tags: tagsInput.split(",").map(tag => tag.trim()).filter(tag => tag),
         results: resultsInput.split("\n").map(result => result.trim()).filter(result => result),
+        duration,
+        featured,
+        challenge,
+        solution,
         testimonial: {
           quote: testimonialQuote,
           author: testimonialAuthor,
@@ -443,28 +478,8 @@ function ProjectDialog({
           title: "Success",
           description: `Project ${project ? "updated" : "added"} successfully.`,
         })
-        // onOpenChange(false)
+        onOpenChange(false)
       }
-      // else {
-         
-      //   if (payload._id) {
-      //     const res = await apiRequest("PUT", `/projects/update${payload._id}`, payload)
-          
-      //     toast({
-      //       title: "Success",
-      //       description: `Project updated successfully.`,
-      //     })
-      //     onOpenChange(false)
-      //   } else {
-      //     const res = await apiRequest("POST", "/api/projects", payload)
-      //     const data = await res.json()
-      //     toast({
-      //       title: "Success",
-      //       description: `Project added successfully.`,
-      //     })
-      //     onOpenChange(false)
-      //   }
-      // }
     } catch (error) {
       console.error("Error submitting form:", error)
       toast({
@@ -486,7 +501,7 @@ function ProjectDialog({
             {project ? "Update the project details below." : "Fill in the details for your new project."}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit(handleSubmit_form)} className="space-y-4">
           {/* Image Preview */}
           {imagePreview && (
             <div className="relative aspect-video bg-muted rounded-lg overflow-hidden group">
@@ -554,29 +569,33 @@ function ProjectDialog({
               <Label htmlFor="title">Title</Label>
               <Input
                 id="title"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                {...register("title")}
               />
+              {formState.errors.title && (
+                <p className="text-sm text-destructive">{formState.errors.title.message}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="category">Category</Label>
-              <Select
-                
-                value={formData.category}
-                onValueChange={(value: "web" | "mobile" | "software") =>
-                  setFormData({ ...formData, category: value })
-                }
-                
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="w-full" >
-                  <SelectItem value="web">Web Development</SelectItem>
-                  <SelectItem value="mobile">Mobile Apps</SelectItem>
-                  <SelectItem value="software">Software Systems</SelectItem>
-                </SelectContent>
-              </Select>
+              <Controller
+                name="category"
+                control={control}
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="w-full" >
+                      <SelectItem value="web">Web Development</SelectItem>
+                      <SelectItem value="mobile">Mobile Apps</SelectItem>
+                      <SelectItem value="software">Software Systems</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {formState.errors.category && (
+                <p className="text-sm text-destructive">{formState.errors.category.message}</p>
+              )}
             </div>
           </div>
 
@@ -584,20 +603,24 @@ function ProjectDialog({
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              {...register("description")}
               rows={2}
             />
+            {formState.errors.description && (
+              <p className="text-sm text-destructive">{formState.errors.description.message}</p>
+            )}
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="longDescription">Long Description</Label>
             <Textarea
               id="longDescription"
-              value={formData.longDescription}
-              onChange={(e) => setFormData({ ...formData, longDescription: e.target.value })}
+              {...register("longDescription")}
               rows={3}
             />
+            {formState.errors.longDescription && (
+              <p className="text-sm text-destructive">{formState.errors.longDescription.message}</p>
+            )}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -605,16 +628,17 @@ function ProjectDialog({
               <Label htmlFor="year">Year</Label>
               <Input
                 id="year"
-                value={formData.year}
-                onChange={(e) => setFormData({ ...formData, year: e.target.value })}
+                {...register("year")}
               />
+              {formState.errors.year && (
+                <p className="text-sm text-destructive">{formState.errors.year.message}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="client">Client</Label>
               <Input
                 id="client"
-                value={formData.client || ""}
-                onChange={(e) => setFormData({ ...formData, client: e.target.value })}
+                {...register("client")}
               />
             </div>
           </div>
@@ -635,20 +659,24 @@ function ProjectDialog({
                <Input
                  id="liveUrl"
                  type="url"
-                 value={formData.liveUrl || ""}
-                 onChange={(e) => setFormData({ ...formData, liveUrl: e.target.value })}
+                 {...register("liveUrl")}
                  placeholder="https://example.com"
                />
+               {formState.errors.liveUrl && (
+                 <p className="text-sm text-destructive">{formState.errors.liveUrl.message}</p>
+               )}
              </div>
              <div className="space-y-2">
                <Label htmlFor="githubUrl">GitHub URL</Label>
                <Input
                  id="githubUrl"
                  type="url"
-                 value={formData.githubUrl || ""}
-                 onChange={(e) => setFormData({ ...formData, githubUrl: e.target.value })}
+                 {...register("githubUrl")}
                  placeholder="https://github.com/..."
                />
+               {formState.errors.githubUrl && (
+                 <p className="text-sm text-destructive">{formState.errors.githubUrl.message}</p>
+               )}
              </div>
            </div>
 
@@ -657,8 +685,8 @@ function ProjectDialog({
               <Label htmlFor="duration">Duration</Label>
               <Input
                 id="duration"
-                value={formData.duration || ""}
-                onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                value={duration}
+                onChange={(e) => setDuration(e.target.value)}
                 placeholder="e.g. 4 months"
               />
             </div>
@@ -667,8 +695,8 @@ function ProjectDialog({
               <div className="flex items-center gap-2">
                 <Switch
                   id="featured"
-                  checked={Boolean(formData.featured)}
-                  onCheckedChange={(checked) => setFormData({ ...formData, featured: checked })}
+                  checked={featured}
+                  onCheckedChange={setFeatured}
                 />
                 <Label htmlFor="featured">Featured project</Label>
               </div>
@@ -679,8 +707,8 @@ function ProjectDialog({
             <Label htmlFor="challenge">Challenge</Label>
             <Textarea
               id="challenge"
-              value={formData.challenge || ""}
-              onChange={(e) => setFormData({ ...formData, challenge: e.target.value })}
+              value={challenge}
+              onChange={(e) => setChallenge(e.target.value)}
               rows={2}
             />
           </div>
@@ -689,8 +717,8 @@ function ProjectDialog({
             <Label htmlFor="solution">Solution</Label>
             <Textarea
               id="solution"
-              value={formData.solution || ""}
-              onChange={(e) => setFormData({ ...formData, solution: e.target.value })}
+              value={solution}
+              onChange={(e) => setSolution(e.target.value)}
               rows={2}
             />
           </div>

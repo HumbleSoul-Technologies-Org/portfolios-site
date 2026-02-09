@@ -62,13 +62,13 @@ export default function ContactPage() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         {/* Page Header */}
         <div className="mb-16 text-center">
-          <p className="text-sm font-medium uppercase tracking-widest text-accent">
+          <p className="text-sm font-medium uppercase tracking-widest text-accent animate-fade-in">
             Contact
           </p>
-          <h1 className="mt-2 text-balance text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+          <h1 className="mt-2 text-balance text-4xl font-bold tracking-tight text-foreground sm:text-5xl animate-fade-in [animation-delay:100ms]">
             {"Let's"} Work Together
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
+          <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground animate-fade-in [animation-delay:200ms]">
             Have a project in mind? {"I'd"} love to hear about it. Fill out the form below 
             or reach out directly through any of the channels listed.
           </p>
@@ -76,7 +76,7 @@ export default function ContactPage() {
 
         <div className="grid gap-12 lg:grid-cols-5">
           {/* Contact Form */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3 animate-fade-in [animation-delay:300ms]">
             <div className="rounded-2xl border border-border/50 bg-card p-6 sm:p-8">
               <div className="mb-8">
                 <h2 className="flex items-center gap-2 text-xl font-semibold text-foreground">
@@ -94,10 +94,10 @@ export default function ContactPage() {
           {/* Contact Info Sidebar */}
           <div className="lg:col-span-2">
             {/* Contact Details */}
-            <div className="mb-8 rounded-2xl border border-border/50 bg-card p-6">
+            <div className="mb-8 rounded-2xl border border-border/50 bg-card p-6 animate-fade-in [animation-delay:350ms]">
               <h2 className="mb-6 text-lg font-semibold text-foreground">Contact Info</h2>
               <div className="space-y-4">
-                {contactInfo.map((info) => (
+                {contactInfo.map((info, idx) => (
                   <div key={info.label} className="flex items-start gap-4">
                     <div className="rounded-lg bg-accent/10 p-2 text-accent">
                       <info.icon className="h-5 w-5" />

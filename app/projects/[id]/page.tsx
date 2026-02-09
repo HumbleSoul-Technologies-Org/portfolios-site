@@ -45,7 +45,7 @@ export default async function ProjectPage({ params }: PageProps) {
         {/* Back Link */}
         <Link
           href="/projects"
-          className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+          className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground animate-fade-in"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Projects
@@ -54,16 +54,16 @@ export default async function ProjectPage({ params }: PageProps) {
         {/* Header */}
         <header className="mb-12">
           <div className="mb-4 flex flex-wrap gap-2">
-            {project.tags.map((tag) => (
-              <Badge key={tag} variant="secondary">
+            {project.tags.map((tag, idx) => (
+              <Badge key={tag} variant="secondary" className="animate-fade-in" style={{ animationDelay: `${100 + idx * 50}ms` }}>
                 {tag}
               </Badge>
             ))}
           </div>
-          <h1 className="text-balance text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+          <h1 className="text-balance text-4xl font-bold tracking-tight text-foreground sm:text-5xl animate-fade-in [animation-delay:200ms]">
             {project.title}
           </h1>
-          <p className="mt-4 text-lg text-muted-foreground">
+          <p className="mt-4 text-lg text-muted-foreground animate-fade-in [animation-delay:300ms]">
             {project.longDescription}
           </p>
 

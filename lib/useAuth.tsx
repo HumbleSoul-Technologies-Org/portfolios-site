@@ -40,8 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const savedProfile = localStorage.getItem("profile");
       const savedToken = localStorage.getItem("token");
       
-      console.log("Refresh: savedProfile =", savedProfile);
-      console.log("Refresh: savedToken =", savedToken);
+      // restored saved profile/token from localStorage (silently)
       
       // Guard against "undefined" string values
       if (savedToken && savedToken !== "undefined") {
@@ -54,7 +53,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
           const parsedProfile = JSON.parse(savedProfile);
           setUser(parsedProfile);
-          console.log("Refresh: User restored from localStorage:", parsedProfile);
         } catch (parseErr) {
           console.error("Failed to parse profile:", parseErr);
           setUser(null);
@@ -77,11 +75,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const token = localStorage.getItem("token");
     
     if (profile === "undefined") {
-      console.warn("Corrupted profile in localStorage, clearing");
       localStorage.removeItem("profile");
     }
     if (token === "undefined") {
-      console.warn("Corrupted token in localStorage, clearing");
       localStorage.removeItem("token");
     }
     
@@ -90,12 +86,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function login(username: string, password: string) {
     try {
-      console.log("Attempting login with email:", username);
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}/admin/login`, 
         { email: username, password }
       );
-      console.log("Full login response:", response.data);
+      // login response received
       
       if (response.status === 200) {
         // Extract user and token - handle multiple possible response structures
@@ -107,28 +102,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           throw new Error(`Invalid response structure. Admin: ${!!admin}, Token: ${!!token}`);
         }
         
-        console.log("Extracted admin:", admin);
-        console.log("Extracted token:", token);
+        // extracted admin and token
         
         // Store in localStorage first
         localStorage.setItem("profile", JSON.stringify(admin));
         localStorage.setItem("token", token);
-        console.log("Stored in localStorage");
         
         // Set session cookie with proper formatting
         const cookieValue = `${token}`;
         document.cookie = `session=${encodeURIComponent(cookieValue)}; path=/; max-age=86400`;
-        console.log("Cookie set");
         
         // Update state
         setUser(admin);
         setToken(token);
-        console.log("State updated, navigating to dashboard");
-        
-        // Give browser a moment to set cookie, then navigate
-        setTimeout(() => {
-          window.location.href = "/dashboard";
-        }, 100);
+        // Navigate to dashboard using Next router
+        router.push("/dashboard");
       }
     } catch (error: any) {
       console.error("Login error:", error);
@@ -143,37 +131,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function logout() {
     try {
-      console.log("Starting logout...");
-      
-      // Clear state first
+      // Clear state and storage
       setUser(null);
       setToken(null);
-      console.log("State cleared");
-      
-      // Clear localStorage
       localStorage.removeItem("profile");
       localStorage.removeItem("token");
-      console.log("localStorage cleared");
-      console.log("profile after remove:", localStorage.getItem("profile"));
-      console.log("token after remove:", localStorage.getItem("token"));
-      
-      // Clear session cookie
       document.cookie = "session=; path=/; max-age=0";
-      console.log("Session cookie cleared");
-      
-      // Call logout API
+
+      // Call logout API (best-effort)
       try {
         await fetch("/api/auth/logout", { method: "POST" });
-        console.log("API logout called");
       } catch (apiErr) {
         console.error("API logout failed (but continuing):", apiErr);
       }
-      
-      // Give browser time to clear everything, then redirect
-      setTimeout(() => {
-        console.log("Redirecting to login");
-        window.location.href = "/login";
-      }, 200);
+
+      // Redirect to login
+      router.push("/login");
     } catch (err) {
       console.error("Logout error:", err);
       // Force redirect even if something fails

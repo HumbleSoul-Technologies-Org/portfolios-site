@@ -284,7 +284,7 @@ export default function CVPage() {
             </div>
           </div>
           <Button asChild className="gap-2">
-            <a href="/cv.pdf" download>
+            <a href="https://drive.google.com/file/d/1qVZyFqbAY4bglskt_udHXBTzsxoRGJHG/view?usp=drive_link" download>
               <Download className="h-4 w-4" />
               Download PDF
             </a>

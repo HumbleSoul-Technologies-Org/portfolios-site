@@ -1,6 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useForm, Controller } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
 import { 
   Plus, 
   Pencil, 
@@ -35,6 +38,47 @@ import { set } from "react-hook-form"
 import { toast } from "@/hooks/use-toast"
 import { useQuery } from "@tanstack/react-query"
 import { log } from "console"
+
+// Zod schemas for CV forms
+const experienceSchema = z.object({
+  title: z.string().min(1, "Job title is required").min(2, "Job title must be at least 2 characters"),
+  company: z.string().min(1, "Company name is required"),
+  location: z.string().min(1, "Location is required"),
+  period: z.string().min(1, "Period is required"),
+  description: z.string().min(1, "Description is required").min(10, "Description must be at least 10 characters"),
+})
+
+const educationSchema = z.object({
+  degree: z.string().min(1, "Degree/Qualification is required"),
+  institution: z.string().min(1, "Institution name is required"),
+  location: z.string().min(1, "Location is required"),
+  period: z.string().min(1, "Period is required"),
+  description: z.string().optional(),
+})
+
+const skillSchema = z.object({
+  name: z.string().min(1, "Skill name is required").min(2, "Skill name must be at least 2 characters"),
+  category: z.enum(["Technical Skills", "Soft Skills", "Professional Skills", "Other"]),
+  level: z.enum(["Beginner", "Intermediate", "Advanced", "Expert"]),
+})
+
+const certificationSchema = z.object({
+  name: z.string().min(1, "Certification name is required"),
+  issuer: z.string().min(1, "Issuer name is required"),
+  date: z.string().min(1, "Date is required"),
+  url: z.string().url("Invalid URL").optional().or(z.literal("")),
+})
+
+const languageSchema = z.object({
+  name: z.string().min(1, "Language name is required"),
+  level: z.enum(["Beginner", "Intermediate", "Advanced", "Expert"]),
+})
+
+type ExperienceFormData = z.infer<typeof experienceSchema>
+type EducationFormData = z.infer<typeof educationSchema>
+type SkillFormData = z.infer<typeof skillSchema>
+type CertificationFormData = z.infer<typeof certificationSchema>
+type LanguageFormData = z.infer<typeof languageSchema>
 
 interface Experience {
   _id: string
@@ -317,10 +361,10 @@ export default function CVManagementPage() {
   return (
     <div className="p-6 lg:p-8">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8 animate-fade-in">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">CV Manager</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-3xl font-bold tracking-tight animate-fade-in [animation-delay:50ms]">CV Manager</h1>
+          <p className="text-muted-foreground mt-1 animate-fade-in [animation-delay:100ms]">
             Manage your resume and professional information
           </p>
         </div>
@@ -841,56 +885,100 @@ function ExperienceDialog({ open, onOpenChange, data, isNew, onSave ,loading}: {
   onSave: (data: Experience) => void
   loading: boolean
 }) {
-  const [formData, setFormData] = useState<any>(data || { id: "", title: "", company: "", location: "", period: "", description: "", current: false })
-  
-  // Update form data when data prop changes
+  const { register, handleSubmit, control, formState, reset } = useForm<ExperienceFormData>({
+    resolver: zodResolver(experienceSchema),
+    mode: "onChange",
+    defaultValues: {
+      title: data?.title ?? "",
+      company: data?.company ?? "",
+      location: data?.location ?? "",
+      period: data?.period ?? "",
+      description: data?.description ?? "",
+    },
+  })
+
   useEffect(() => {
     if (data && open) {
-      setFormData(data)
+      reset({
+        title: data.title,
+        company: data.company,
+        location: data.location,
+        period: data.period,
+        description: data.description,
+      })
+    } else if (!data && isNew) {
+      reset({
+        title: "",
+        company: "",
+        location: "",
+        period: "",
+        description: "",
+      })
     }
-  }, [data, open])
+  }, [data, open, isNew, reset])
   
   if (!open) return null
   
-  
+  const handleSaveExperience = async (values: ExperienceFormData) => {
+    onSave({
+      ...data,
+      ...values,
+      _id: data?._id || "",
+      current: data?.current ?? false,
+    } as Experience)
+  }
 
-  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{isNew ? "Add Experience" : "Edit Experience"}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
+        <form onSubmit={handleSubmit(handleSaveExperience)} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Job Title</Label>
-              <Input  value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
+              <Input {...register("title")} />
+              {formState.errors.title && (
+                <p className="text-sm text-destructive">{formState.errors.title.message}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Company</Label>
-              <Input  value={formData.company} onChange={(e) => setFormData({ ...formData, company: e.target.value })} />
+              <Input {...register("company")} />
+              {formState.errors.company && (
+                <p className="text-sm text-destructive">{formState.errors.company.message}</p>
+              )}
             </div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Location</Label>
-              <Input  value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} />
+              <Input {...register("location")} />
+              {formState.errors.location && (
+                <p className="text-sm text-destructive">{formState.errors.location.message}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Period</Label>
-              <Input  value={formData.period} onChange={(e) => setFormData({ ...formData, period: e.target.value })} placeholder="2023 - Present" />
+              <Input {...register("period")} placeholder="2023 - Present" />
+              {formState.errors.period && (
+                <p className="text-sm text-destructive">{formState.errors.period.message}</p>
+              )}
             </div>
           </div>
           <div className="space-y-2">
             <Label>Description</Label>
-            <Textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3} />
+            <Textarea {...register("description")} rows={3} />
+            {formState.errors.description && (
+              <p className="text-sm text-destructive">{formState.errors.description.message}</p>
+            )}
           </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onOpenChange}>Cancel</Button>
-          <Button onClick={() => onSave(formData)} disabled={loading}>{loading ? <>Saving... <Save className="h-4 w-4 ml-2 animate-bounce" /></> : "Save"}</Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onOpenChange}>Cancel</Button>
+            <Button type="submit" disabled={loading || !formState.isValid}>{loading ? <>Saving... <Save className="h-4 w-4 ml-2 animate-bounce" /></> : "Save"}</Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   )
@@ -904,51 +992,94 @@ function EducationDialog({ open, onOpenChange, data, isNew, onSave,loading }: {
   loading: boolean
   onSave: (data: Education) => void
 }) {
-  const [formData, setFormData] = useState<any>(data || { id: "", degree: "", institution: "", location: "", period: "", description: "" })
-  
-  // Update form data when data prop changes
+  const { register, handleSubmit, control, formState, reset } = useForm<EducationFormData>({
+    resolver: zodResolver(educationSchema),
+    mode: "onChange",
+    defaultValues: {
+      degree: data?.degree ?? "",
+      institution: data?.institution ?? "",
+      location: data?.location ?? "",
+      period: data?.period ?? "",
+      description: data?.description ?? "",
+    },
+  })
+
   useEffect(() => {
     if (data && open) {
-      setFormData(data)
+      reset({
+        degree: data.degree,
+        institution: data.institution,
+        location: data.location,
+        period: data.period,
+        description: data.description,
+      })
+    } else if (!data && isNew) {
+      reset({
+        degree: "",
+        institution: "",
+        location: "",
+        period: "",
+        description: "",
+      })
     }
-  }, [data, open])
+  }, [data, open, isNew, reset])
   
   if (!open) return null
   
+  const handleSaveEducation = async (values: EducationFormData) => {
+    onSave({
+      ...data,
+      ...values,
+      _id: data?._id || "",
+    } as Education)
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{isNew ? "Add Education" : "Edit Education"}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
+        <form onSubmit={handleSubmit(handleSaveEducation)} className="space-y-4">
           <div className="space-y-2">
             <Label>Degree / Qualification</Label>
-            <Input value={formData.degree} onChange={(e) => setFormData({ ...formData, degree: e.target.value })} />
+            <Input {...register("degree")} />
+            {formState.errors.degree && (
+              <p className="text-sm text-destructive">{formState.errors.degree.message}</p>
+            )}
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Institution</Label>
-              <Input value={formData.institution} onChange={(e) => setFormData({ ...formData, institution: e.target.value })} />
+              <Input {...register("institution")} />
+              {formState.errors.institution && (
+                <p className="text-sm text-destructive">{formState.errors.institution.message}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Location</Label>
-              <Input value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} />
+              <Input {...register("location")} />
+              {formState.errors.location && (
+                <p className="text-sm text-destructive">{formState.errors.location.message}</p>
+              )}
             </div>
           </div>
           <div className="space-y-2">
             <Label>Period</Label>
-            <Input value={formData.period} onChange={(e) => setFormData({ ...formData, period: e.target.value })} placeholder="2015 - 2019" />
+            <Input {...register("period")} placeholder="2015 - 2019" />
+            {formState.errors.period && (
+              <p className="text-sm text-destructive">{formState.errors.period.message}</p>
+            )}
           </div>
           <div className="space-y-2">
             <Label>Description</Label>
-            <Textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={2} />
+            <Textarea {...register("description")} rows={2} />
           </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onOpenChange}>Cancel</Button>
-          <Button disabled={loading} onClick={() => onSave(formData)}>{loading ? <>Saving... <Save className="h-4 w-4 ml-2 animate-bounce" /></> : "Save"}</Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onOpenChange}>Cancel</Button>
+            <Button type="submit" disabled={loading || !formState.isValid}>{loading ? <>Saving... <Save className="h-4 w-4 ml-2 animate-bounce" /></> : "Save"}</Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   )
@@ -962,62 +1093,93 @@ function SkillDialog({ open, onOpenChange, data, isNew, onSave, loading }: {
   onSave: (data: Skill) => void
   loading: boolean
 }) {
-  const [formData, setFormData] = useState<any|{}>(data || {  name: "", level: "", category: "" })
-  
-  // Update form data when data prop changes
+  const { register, handleSubmit, control, formState, reset } = useForm<SkillFormData>({
+    resolver: zodResolver(skillSchema),
+    mode: "onChange",
+    defaultValues: {
+      name: data?.name ?? "",
+      category: data?.category ?? "Technical Skills",
+      level: data?.level ?? "Intermediate",
+    },
+  })
+
   useEffect(() => {
     if (data && open) {
-      setFormData(data)
+      reset({
+        name: data.name,
+        category: data.category,
+        level: data.level,
+      })
+    } else if (!data && isNew) {
+      reset({
+        name: "",
+        category: "Technical Skills",
+        level: "Intermediate",
+      })
     }
-  }, [data, open])
+  }, [data, open, isNew, reset])
   
   if (!open) return null
   
+  const handleSaveSkill = async (values: SkillFormData) => {
+    onSave({
+      ...data,
+      ...values,
+      _id: data?._id || "",
+    } as Skill)
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{isNew ? "Add Skill" : "Edit Skill"}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
+        <form onSubmit={handleSubmit(handleSaveSkill)} className="space-y-4">
           <div className="space-y-2">
             <Label>Skill Name</Label>
-            <Input className="" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+            <Input {...register("name")} />
+            {formState.errors.name && (
+              <p className="text-sm text-destructive">{formState.errors.name.message}</p>
+            )}
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Category</Label>
               <select
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="flex h-9 w-full cursor-pointer rounded-md  border-input bg-white text-background px-3 py-1 text-sm shadow-xs"
+                {...register("category")}
+                className="flex h-9 w-full cursor-pointer rounded-md border border-input bg-white text-background px-3 py-1 text-sm shadow-xs"
               >
-                <option value="">Select a category</option>
                 <option value="Technical Skills">Technical Skills</option>
                 <option value="Soft Skills">Soft Skills</option>
                 <option value="Professional Skills">Professional Skills</option>
                 <option value="Other">Other</option>
               </select>
+              {formState.errors.category && (
+                <p className="text-sm text-destructive">{formState.errors.category.message}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Level</Label>
               <select 
-                value={formData.level} 
-                onChange={(e) => setFormData({ ...formData, level: e.target.value as Skill["level"] })}
-                className="flex h-9 w-full cursor-pointer rounded-md  border-input bg-white text-background border-0 px-3 py-1 text-sm shadow-xs"
+                {...register("level")}
+                className="flex h-9 w-full cursor-pointer rounded-md border border-input bg-white text-background px-3 py-1 text-sm shadow-xs"
               >
-                <option className="text-sm text-black cursor-pointer" value="Beginner">Beginner</option>
-                <option className="text-sm text-black cursor-pointer" value="Intermediate">Intermediate</option>
-                <option className="text-sm text-black cursor-pointer" value="Advanced">Advanced</option>
-                <option className="text-sm text-black cursor-pointer" value="Expert">Expert</option>
+                <option value="Beginner">Beginner</option>
+                <option value="Intermediate">Intermediate</option>
+                <option value="Advanced">Advanced</option>
+                <option value="Expert">Expert</option>
               </select>
+              {formState.errors.level && (
+                <p className="text-sm text-destructive">{formState.errors.level.message}</p>
+              )}
             </div>
           </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onOpenChange}>Cancel</Button>
-          <Button disabled={loading} onClick={() => onSave(formData)}>{loading ? <>Saving... <Save className="h-4 w-4 ml-2 animate-bounce" /></> : "Save"}</Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onOpenChange}>Cancel</Button>
+            <Button type="submit" disabled={loading || !formState.isValid}>{loading ? <>Saving... <Save className="h-4 w-4 ml-2 animate-bounce" /></> : "Save"}</Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   )
@@ -1031,47 +1193,87 @@ function CertificationDialog({ open, onOpenChange, data, isNew, onSave, loading 
   onSave: (data: Certification) => void
   loading: boolean
 }) {
-  const [formData, setFormData] = useState<any|{}>(data || {  name: "", issuer: "", date: "", url: "" })
-  
-  // Update form data when data prop changes
+  const { register, handleSubmit, control, formState, reset } = useForm<CertificationFormData>({
+    resolver: zodResolver(certificationSchema),
+    mode: "onChange",
+    defaultValues: {
+      name: data?.name ?? "",
+      issuer: data?.issuer ?? "",
+      date: data?.date ?? "",
+      url: data?.url ?? "",
+    },
+  })
+
   useEffect(() => {
     if (data && open) {
-      setFormData(data)
+      reset({
+        name: data.name,
+        issuer: data.issuer,
+        date: data.date,
+        url: data.url,
+      })
+    } else if (!data && isNew) {
+      reset({
+        name: "",
+        issuer: "",
+        date: "",
+        url: "",
+      })
     }
-  }, [data, open])
+  }, [data, open, isNew, reset])
   
   if (!open) return null
   
+  const handleSaveCertification = async (values: CertificationFormData) => {
+    onSave({
+      ...data,
+      ...values,
+      _id: data?._id || "",
+    } as Certification)
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{isNew ? "Add Certification" : "Edit Certification"}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
+        <form onSubmit={handleSubmit(handleSaveCertification)} className="space-y-4">
           <div className="space-y-2">
             <Label>Certification Name</Label>
-            <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+            <Input {...register("name")} />
+            {formState.errors.name && (
+              <p className="text-sm text-destructive">{formState.errors.name.message}</p>
+            )}
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Issuing Organization</Label>
-              <Input value={formData.issuer} onChange={(e) => setFormData({ ...formData, issuer: e.target.value })} />
+              <Input {...register("issuer")} />
+              {formState.errors.issuer && (
+                <p className="text-sm text-destructive">{formState.errors.issuer.message}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Date</Label>
-              <Input value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} placeholder="2024" />
+              <Input {...register("date")} placeholder="2024" />
+              {formState.errors.date && (
+                <p className="text-sm text-destructive">{formState.errors.date.message}</p>
+              )}
             </div>
           </div>
           <div className="space-y-2">
             <Label>Credential URL (optional)</Label>
-            <Input value={formData.url} onChange={(e) => setFormData({ ...formData, url: e.target.value })} placeholder="https://..." />
+            <Input {...register("url")} placeholder="https://..." />
+            {formState.errors.url && (
+              <p className="text-sm text-destructive">{formState.errors.url.message}</p>
+            )}
           </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onOpenChange}>Cancel</Button>
-          <Button disabled={loading} onClick={() => onSave(formData)}>{loading ? <>Saving... <Save className="h-4 w-4 ml-2 animate-bounce" /></> : "Save"}</Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onOpenChange}>Cancel</Button>
+            <Button type="submit" disabled={loading || !formState.isValid}>{loading ? <>Saving... <Save className="h-4 w-4 ml-2 animate-bounce" /></> : "Save"}</Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   )
@@ -1085,49 +1287,75 @@ function LanguageDialog({ open, onOpenChange, data, isNew, onSave, loading }: {
   onSave: (data: Language) => void
   loading: boolean
 }) {
-  const [formData, setFormData] = useState<any|{}>(data || {  name: "", level: "" })
-  
-  // Update form data when data prop changes
+  const { register, handleSubmit, control, formState, reset } = useForm<LanguageFormData>({
+    resolver: zodResolver(languageSchema),
+    mode: "onChange",
+    defaultValues: {
+      name: data?.name ?? "",
+      level: data?.level ?? "Intermediate",
+    },
+  })
+
   useEffect(() => {
     if (data && open) {
-      setFormData(data)
+      reset({
+        name: data.name,
+        level: data.level as any,
+      })
+    } else if (!data && isNew) {
+      reset({
+        name: "",
+        level: "Intermediate",
+      })
     }
-  }, [data, open])
+  }, [data, open, isNew, reset])
   
   if (!open) return null
   
+  const handleSaveLanguage = async (values: LanguageFormData) => {
+    onSave({
+      ...data,
+      ...values,
+      _id: data?._id || "",
+    } as Language)
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{isNew ? "Add Language" : "Edit Language"}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
+        <form onSubmit={handleSubmit(handleSaveLanguage)} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Language</Label>
-              <Input placeholder="English, French, chinese..." value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+              <Input placeholder="English, French, chinese..." {...register("name")} />
+              {formState.errors.name && (
+                <p className="text-sm text-destructive">{formState.errors.name.message}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Proficiency Level</Label>
               <select
-                value={formData.level}
-                onChange={(e) => setFormData({ ...formData, level: e.target.value })}
+                {...register("level")}
                 className="flex h-9 w-full cursor-pointer rounded-md border border-input bg-white text-background px-3 py-1 text-sm shadow-xs"
               >
-                <option value="">Select a level</option>
                 <option value="Beginner">Beginner</option>
                 <option value="Intermediate">Intermediate</option>
                 <option value="Advanced">Advanced</option>
                 <option value="Expert">Expert</option>
               </select>
+              {formState.errors.level && (
+                <p className="text-sm text-destructive">{formState.errors.level.message}</p>
+              )}
             </div>
           </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onOpenChange}>Cancel</Button>
-          <Button disabled={loading} onClick={() => onSave(formData)}>{loading ? <>Saving... <Save className="h-4 w-4 ml-2 animate-bounce" /></> : "Save"}</Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onOpenChange}>Cancel</Button>
+            <Button type="submit" disabled={loading || !formState.isValid}>{loading ? <>Saving... <Save className="h-4 w-4 ml-2 animate-bounce" /></> : "Save"}</Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   )
