@@ -71,7 +71,7 @@ const projectFormSchema = z.object({
 type ProjectFormData = z.infer<typeof projectFormSchema>
 
 export default function ProjectsManagementPage() {
-  const [projects, setProjects] = useState<any[]>([])
+  const [projects, setProjects] = useState<Project[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -85,16 +85,29 @@ export default function ProjectsManagementPage() {
 
  
   useEffect(() => {
-    if (Projects) {
-      setProjects((Projects as any).data as Project[]);
+    // Ensure projects is always an array, never undefined
+    if (!Projects) {
+      setProjects([]);
+      return;
     }
+    
+    let projectsData: any[] = [];
+    
+    // Handle both direct array and { data: [...] } response structures
+    if (Array.isArray(Projects)) {
+      projectsData = Projects;
+    } else if (Projects && typeof Projects === 'object' && Array.isArray(Projects.data)) {
+      projectsData = Projects.data;
+    }
+    
+    setProjects(Array.isArray(projectsData) ? projectsData : []);
   }, [Projects]);
 
-  const filteredProjects = projects?.filter((project) => {
+  const filteredProjects = (Array.isArray(projects) ? projects : []).filter((project:any) => {
     const matchesSearch = project?.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       project?.description.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = categoryFilter === "all" || project?.category === categoryFilter
-    return matchesSearch && matchesCategory || []
+    return matchesSearch && matchesCategory
   })
 
   const handleDeleteProject = async (id: string) => {
@@ -126,17 +139,17 @@ export default function ProjectsManagementPage() {
   }
 
   const handleToggleFeatured = (projectId: string) => {
-    setProjects(projects.map(p => 
-      p.id === projectId ? { ...p, featured: !p.featured } : p
+    setProjects(projects.map((p:any) => 
+      p._id === projectId ? { ...p, featured: !p.featured } : p
     ))
   }
 
   const handleSaveProject = async (projectData: Project) => {
     try {
-      if (projectData._id && projects.some(p => p._id === projectData._id)) {
+      if (projectData._id && projects.some((p:any) => p._id === projectData._id)) {
         // Update existing project
         await apiRequest("PUT", `/projects/update/${projectData._id}`, projectData)
-        setProjects(projects.map(p => p._id === projectData._id ? projectData : p))
+        setProjects(projects.map((p:any) => p._id === projectData._id ? projectData : p))
         toast({
           title: "✓ Project Updated",
           description: `"${projectData.title}" has been updated successfully.`,
@@ -209,8 +222,8 @@ export default function ProjectsManagementPage() {
 
       {/* Projects Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {filteredProjects.map((project, idx) => (
-          <Card key={project.id} className="overflow-hidden pt-0 group animate-fade-in" style={{ animationDelay: `${idx * 75}ms` }}>
+        {filteredProjects.map((project:any, idx:number) => (
+          <Card key={project._id} className="overflow-hidden pt-0 group animate-fade-in" style={{ animationDelay: `${idx * 75}ms` }}> 
             <div className="relative aspect-video bg-muted">
               <Image
                 loading="lazy"
