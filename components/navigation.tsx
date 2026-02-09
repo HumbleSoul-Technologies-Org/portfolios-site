@@ -39,7 +39,7 @@ export function Navigation() {
         >
           <img className="w-10 h-10" src='https://images.vexels.com/media/users/3/224169/isolated/lists/dbfe1f493ad01117fa4ec5ba10150e4d-computer-programming-logo.png'/>
           {/* YN<span className="text-accent">.</span> */}
-          <span className="text-transparent font-bold bg-clip-text bg-linear-to-r from-accent   to-orange-500" >{user?.name.toUpperCase()} </span>
+          <span className="text-transparent font-bold bg-clip-text bg-linear-to-r from-accent   to-orange-500" >{user?.name.toUpperCase()||"KISIBO JONATHAN"} </span>
         </Link>
 
         {/* Desktop Navigation */}

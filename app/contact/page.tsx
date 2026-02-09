@@ -33,7 +33,7 @@ const contactInfo = [
 
 const socialLinks = [
   { icon: Github, label: "GitHub", href: "https://github.com/GamingHazard/" },
-  { icon: Linkedin, label: "LinkedIn", href: "https://linkedin.com" },
+  { icon: Linkedin, label: "LinkedIn", href: "https://www.linkedin.com/in/kisibo-jonathan-3699ab33b?lipi=urn%3Ali%3Apage%3Ad_flagship3_profile_view_base_contact_details%3BCIq%2FdIhVQVuF9UgUr%2F54Ow%3D%3D" },
   // { icon: Twitter, label: "Twitter", href: "https://twitter.com" },
 ]
 

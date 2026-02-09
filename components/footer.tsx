@@ -5,10 +5,10 @@ import { Github, Linkedin, Mail, Twitter } from "lucide-react"
 import { useAuth } from "@/lib/useAuth"
 
 const socialLinks = [
-  { href: "https://github.com", icon: Github, label: "GitHub" },
-  { href: "https://linkedin.com", icon: Linkedin, label: "LinkedIn" },
-  { href: "https://twitter.com", icon: Twitter, label: "Twitter" },
-  { href: "mailto:hello@example.com", icon: Mail, label: "Email" },
+  { href: "https://github.com/GamingHazard", icon: Github, label: "GitHub" },
+  { href: "https://www.linkedin.com/in/kisibo-jonathan-3699ab33b?lipi=urn%3Ali%3Apage%3Ad_flagship3_profile_view_base_contact_details%3BCIq%2FdIhVQVuF9UgUr%2F54Ow%3D%3D", icon: Linkedin, label: "LinkedIn" },
+  // { href: "https://twitter.com", icon: Twitter, label: "Twitter" },
+  { href: "mailto:kisibojonathan150@gmail.com", icon: Mail, label: "Email" },
 ]
 
 const footerLinks = [
@@ -31,7 +31,7 @@ export function Footer() {
               className="text-xl flex items-center gap-2 font-semibold tracking-tight text-foreground"
             >
           <img className="w-10 h-10" src='https://images.vexels.com/media/users/3/224169/isolated/lists/dbfe1f493ad01117fa4ec5ba10150e4d-computer-programming-logo.png'/>
-          <span className="text-transparent bg-clip-text bg-linear-to-r from-accent   to-orange-500" >{user?.name.toUpperCase() || "Humble Soul Technologies"}</span>
+          <span className="text-transparent bg-clip-text bg-linear-to-r from-accent   to-orange-500" >{user?.name.toUpperCase() || "KISIBO JONATHAN"}</span>
               
             </Link>
             <p className="max-w-xs text-center text-sm text-muted-foreground md:text-left">
