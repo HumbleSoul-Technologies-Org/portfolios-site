@@ -134,7 +134,7 @@ export default function CVManagementPage() {
   const [deleting, setDeleting] = useState<string | null>(null)
 
   const { data:cv, error } = useQuery<any>({
-    queryKey: ["resume","/"],
+    queryKey: ["resume"],
   })
   
   const [editDialog, setEditDialog] = useState<{
