@@ -1,12 +1,12 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import axios from "axios";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL as string;
+const BASE_URL =
+  (process.env.NEXT_PUBLIC_API_URL as string) || "http://localhost:6969/api";
 
 // Axios instance for GET only
 const axiosClient = axios.create({
   baseURL: BASE_URL,
-  
 });
 
 // Throws error if response is not OK
@@ -22,7 +22,7 @@ export async function apiRequest(
   method: string,
   url: string,
   data?: unknown,
-  token?: string
+  token?: string,
 ): Promise<Response> {
   const headers: Record<string, string> = {};
   if (data) headers["Content-Type"] = "application/json";
@@ -80,7 +80,6 @@ export const getQueryFn: <T>(options: {
       clearTimeout(timer);
     }
   };
-
 
 // React Query Global Config
 export const queryClient = new QueryClient({

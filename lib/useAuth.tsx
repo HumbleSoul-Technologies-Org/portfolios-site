@@ -1,22 +1,35 @@
-"use client"
+"use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
+// TODO: TEMP: Re-add axios import when restoring real authentication
+// import axios from "axios";
 import { toast } from "@/hooks/use-toast";
 
 interface User {
-  id: string,
-  name: string,
-  email: string,
-  token: string,
-  title?: string,
-  avatarUrl?: { url: string, puplic_id: string },
-  phone?: string,
-  address?: string,
-  website?: string,
-  bio?: string,
+  id: string;
+  name: string;
+  email: string;
+  token: string;
+  title?: string;
+  avatarUrl?: { url: string; puplic_id: string };
+  phone?: string;
+  address?: string;
+  website?: string;
+  bio?: string;
 }
+
+// TODO: TEMP: Remove hardcoded user and token - restore real authentication
+const HARDCODED_TOKEN = "dev-temp-session-token-12345";
+const HARDCODED_USER: User = {
+  id: "dev-temp-user-id",
+  name: "Dev User",
+  email: "dev@example.com",
+  token: HARDCODED_TOKEN,
+  title: "Developer",
+  bio: "Temporary hardcoded user for development",
+};
+
 type AuthContextType = {
   user: User | null;
   loading: boolean;
@@ -29,7 +42,7 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User|null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | any>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -37,30 +50,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function refresh() {
     setLoading(true);
     try {
-      const savedProfile = localStorage.getItem("profile");
-      const savedToken = localStorage.getItem("token");
-      
-      // restored saved profile/token from localStorage (silently)
-      
-      // Guard against "undefined" string values
-      if (savedToken && savedToken !== "undefined") {
-        setToken(savedToken);
-        // Sync cookie
-        document.cookie = `session=${encodeURIComponent(savedToken)}; path=/; max-age=86400`;
-      }
-
-      if (savedProfile && savedProfile !== "undefined") {
-        try {
-          const parsedProfile = JSON.parse(savedProfile);
-          setUser(parsedProfile);
-        } catch (parseErr) {
-          console.error("Failed to parse profile:", parseErr);
-          setUser(null);
-          localStorage.removeItem("profile");
-        }
-      } else {
-        setUser(null);
-      }
+      // TODO: TEMP: Replace with real refresh() logic from localStorage
+      // This temporarily uses hardcoded credentials for development
+      setToken(HARDCODED_TOKEN);
+      // Sync cookie
+      document.cookie = `session=${encodeURIComponent(HARDCODED_TOKEN)}; path=/; max-age=86400`;
+      setUser(HARDCODED_USER);
     } catch (err) {
       console.error("Refresh error:", err);
       setUser(null);
@@ -73,55 +68,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Clean up any corrupted localStorage entries
     const profile = localStorage.getItem("profile");
     const token = localStorage.getItem("token");
-    
+
     if (profile === "undefined") {
       localStorage.removeItem("profile");
     }
     if (token === "undefined") {
       localStorage.removeItem("token");
     }
-    
+
     refresh();
   }, []);
 
   async function login(username: string, password: string) {
     try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/admin/login`, 
-        { email: username, password },
-        { timeout: 10000 } // 10 second timeout instead of indefinite
-      );
-      // login response received
-      
-      if (response.status === 200) {
-        // Extract user and token - handle multiple possible response structures
-        const responseData = response.data.data || response.data;
-        const admin = responseData?.admin || responseData;
-        const token = responseData?.token;
-        
-        if (!admin || !token) {
-          throw new Error(`Invalid response structure. Admin: ${!!admin}, Token: ${!!token}`);
-        }
-        
-        // extracted admin and token
-        
-        // Store in localStorage first
-        localStorage.setItem("profile", JSON.stringify(admin));
-        localStorage.setItem("token", token);
-        
-        // Set session cookie with proper formatting
-        const cookieValue = `${token}`;
-        document.cookie = `session=${encodeURIComponent(cookieValue)}; path=/; max-age=86400`;
-        
-        // Update state
-        setUser(admin);
-        setToken(token);
-        // Navigate to dashboard using Next router
-        router.push("/dashboard");
-      }
+      // TODO: TEMP: Remove hardcoded login bypass - restore real API call
+      // For now, we're bypassing the external API and using hardcoded credentials
+      const admin = HARDCODED_USER;
+      const token = HARDCODED_TOKEN;
+
+      // Store in localStorage first
+      localStorage.setItem("profile", JSON.stringify(admin));
+      localStorage.setItem("token", token);
+
+      // Set session cookie with proper formatting
+      const cookieValue = `${token}`;
+      document.cookie = `session=${encodeURIComponent(cookieValue)}; path=/; max-age=86400`;
+
+      // Update state
+      setUser(admin);
+      setToken(token);
+      // Navigate to dashboard using Next router
+      router.push("/dashboard");
     } catch (error: any) {
       console.error("Login error:", error);
-      const errorMsg = error.response?.data?.message || error.message || "Login failed";
+      const errorMsg =
+        error.response?.data?.message || error.message || "Login failed";
       toast({
         title: "Login failed",
         description: errorMsg,
@@ -156,7 +137,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, refresh,token }}>
+    <AuthContext.Provider
+      value={{ user, loading, login, logout, refresh, token }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -17,6 +17,7 @@ import {
   Moon,
   Sun,
   LogOut,
+  Key,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ const sidebarLinks = [
   { href: "/dashboard/projects", label: "Projects", icon: FolderKanban },
   { href: "/dashboard/cv", label: "CV", icon: FileText },
   { href: "/dashboard/messages", label: "Messages", icon: MessageSquare },
+  { href: "/dashboard/keys", label: "Keys Management", icon: Key },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
@@ -43,11 +45,11 @@ export default function DashboardLayout({
 
   async function handleLogout() {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      await fetch("/api/auth/logout", { method: "POST" });
     } catch (e) {
       // ignore
     }
-    router.push('/login');
+    router.push("/login");
   }
 
   return (

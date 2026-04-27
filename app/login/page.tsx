@@ -2,9 +2,9 @@
 
 import React, { useEffect, useState, Suspense } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,14 +21,14 @@ function LoginForm() {
   const loginSchema = z.object({
     username: z.string().min(1, "Enter your username"),
     password: z.string().min(6, "Password must be at least 6 characters"),
-  })
+  });
 
-  type LoginFormValues = z.infer<typeof loginSchema>
+  type LoginFormValues = z.infer<typeof loginSchema>;
 
   const { register, handleSubmit, formState } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     mode: "onChange",
-  })
+  });
 
   // If already authenticated, redirect to dashboard
   useEffect(() => {
@@ -56,7 +56,9 @@ function LoginForm() {
       >
         <div className="space-y-2">
           <h1 className="text-2xl font-bold tracking-tight">Welcome Back</h1>
-          <p className="text-sm text-muted-foreground">Sign in to your account to continue</p>
+          <p className="text-sm text-muted-foreground">
+            Sign in to your account to continue
+          </p>
         </div>
 
         {error && (
@@ -67,30 +69,30 @@ function LoginForm() {
 
         <div className="space-y-2">
           <Label htmlFor="username">Username</Label>
-          <Input 
-            className="mt-2" 
-            id="username" 
+          <Input
+            className="mt-2"
+            id="username"
             disabled={submitting}
             placeholder="Enter your username"
-            {...register("username")} 
+            {...register("username")}
           />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
-          <Input 
-            className="mt-2" 
-            id="password" 
-            type="password" 
+          <Input
+            className="mt-2"
+            id="password"
+            type="password"
             disabled={submitting}
             placeholder="Enter your password"
-            {...register("password")} 
+            {...register("password")}
           />
         </div>
 
-        <Button 
-          type="submit" 
-          disabled={submitting || !formState.isValid} 
+        <Button
+          type="submit"
+          disabled={submitting || !formState.isValid}
           className="w-full gap-2 transition-all"
         >
           {submitting ? (
@@ -117,7 +119,13 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center">Loading...</div>}>
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          Loading...
+        </div>
+      }
+    >
       <LoginForm />
     </Suspense>
   );
