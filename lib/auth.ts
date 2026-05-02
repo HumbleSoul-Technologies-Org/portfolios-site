@@ -4,6 +4,7 @@ const SECRET = process.env.AUTH_SECRET || "dev-secret";
 const USERNAME = process.env.AUTH_USERNAME || "admin";
 const PASSWORD = process.env.AUTH_PASSWORD || "123456";
 const SESSION_MAX_AGE = 60 * 60; // seconds (1 hour)
+export { SESSION_MAX_AGE };
 
 export function createSession(username: string) {
   const exp = Math.floor(Date.now() / 1000) + SESSION_MAX_AGE;

@@ -39,9 +39,6 @@ import {
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/useAuth";
 
 // Stats data
 const stats = [
@@ -212,18 +209,6 @@ const recentMessages = [
 ];
 
 export default function DashboardPage() {
-  const { user, loading } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!loading && !user) {
-      router.replace(`/login?from=/dashboard`);
-    }
-  }, [loading, user, router]);
-
-  if (loading) return <div className="p-6">Loading...</div>;
-  if (!loading && !user) return null;
-
   return (
     <div className="p-6 lg:p-8 max-h-screen overflow-y-auto">
       <div className="mb-8">

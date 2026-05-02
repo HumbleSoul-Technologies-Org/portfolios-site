@@ -1,13 +1,12 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
-import { Menu, Moon, Sun, X } from "lucide-react"
-import { useAuth } from "@/lib/useAuth"
-import { useTheme } from "next-themes"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+import * as React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Menu, Moon, Sun, X } from "lucide-react";
+import { useTheme } from "next-themes";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/", label: "Home" },
@@ -16,30 +15,33 @@ const navItems = [
   { href: "/about", label: "About" },
   { href: "/cv", label: "CV" },
   { href: "/contact", label: "Contact" },
-]
+];
 
 export function Navigation() {
-  const pathname = usePathname()
-  const { theme, setTheme } = useTheme()
-  const [isOpen, setIsOpen] = React.useState(false)
-  const [mounted, setMounted] = React.useState(false)
-  const router = useRouter()
-  const { user } = useAuth()
+  const pathname = usePathname();
+  const { theme, setTheme } = useTheme();
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
-    setMounted(true)
-  }, [])
+    setMounted(true);
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-md animate-fade-in">
       <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-        <Link 
-          href="/" 
+        <Link
+          href="/"
           className="text-xl flex items-center gap-2 font-semibold tracking-tight text-foreground transition-all duration-300 hover:text-accent hover:scale-105"
         >
-          <img className="w-10 h-10" src='https://images.vexels.com/media/users/3/224169/isolated/lists/dbfe1f493ad01117fa4ec5ba10150e4d-computer-programming-logo.png'/>
+          <img
+            className="w-10 h-10"
+            src="https://images.vexels.com/media/users/3/224169/isolated/lists/dbfe1f493ad01117fa4ec5ba10150e4d-computer-programming-logo.png"
+          />
           {/* YN<span className="text-accent">.</span> */}
-          <span className="text-transparent font-bold bg-clip-text bg-linear-to-r from-accent   to-orange-500" >{user?.name.toUpperCase()||"KISIBO JONATHAN"} </span>
+          <span className="text-transparent font-bold bg-clip-text bg-linear-to-r from-accent   to-orange-500">
+            KISIBO JONATHAN
+          </span>
         </Link>
 
         {/* Desktop Navigation */}
@@ -52,7 +54,7 @@ export function Navigation() {
                 "px-3 py-2 text-sm font-medium transition-all duration-300 rounded-md transform hover:scale-110",
                 pathname === item.href
                   ? "text-foreground bg-secondary"
-                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/50",
               )}
               style={{ animationDelay: `${idx * 50}ms` }}
             >
@@ -62,20 +64,6 @@ export function Navigation() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Dashboard Button (visible only when signed in) */}
-          {user && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-9"
-              onClick={() => {
-                router.push("/dashboard");
-              }}
-            >
-              Dashboard
-            </Button>
-          )}
-
           {mounted && (
             <Button
               variant="ghost"
@@ -115,31 +103,15 @@ export function Navigation() {
                   "px-3 py-3 text-sm font-medium transition-colors rounded-md",
                   pathname === item.href
                     ? "text-foreground bg-secondary"
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50",
                 )}
               >
                 {item.label}
               </Link>
             ))}
-
-            {user && (
-              <Link
-                key="/dashboard"
-                href="/dashboard"
-                onClick={() => setIsOpen(false)}
-                className={cn(
-                  "px-3 py-3 text-sm font-medium transition-colors rounded-md",
-                  pathname === "/dashboard"
-                    ? "text-foreground bg-secondary"
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                )}
-              >
-                Dashboard
-              </Link>
-            )}
           </div>
         </div>
       )}
     </header>
-  )
+  );
 }

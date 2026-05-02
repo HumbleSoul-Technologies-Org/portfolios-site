@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useForm, Controller } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
-import { 
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import {
   Save,
   User,
   Mail,
@@ -18,103 +18,122 @@ import {
   Camera,
   Bell,
   Shield,
-  Palette
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Switch } from "@/components/ui/switch"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import axios from "axios"
+  Palette,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-
-import { useAuth } from "@/lib/useAuth"
+} from "@/components/ui/select";
 
 const profileSchema = z.object({
-  name: z.string().min(1, "Name is required").min(2, "Name must be at least 2 characters"),
+  name: z
+    .string()
+    .min(1, "Name is required")
+    .min(2, "Name must be at least 2 characters"),
   title: z.string().optional(),
   email: z.string().min(1, "Email is required").email("Invalid email address"),
   phone: z.string().optional(),
   location: z.string().optional(),
   website: z.string().url("Invalid URL").optional().or(z.literal("")),
   bio: z.string().max(500, "Bio must be 500 characters or less").optional(),
-})
+});
 
 const socialSchema = z.object({
   github: z.string().url("Invalid GitHub URL").optional().or(z.literal("")),
   linkedin: z.string().url("Invalid LinkedIn URL").optional().or(z.literal("")),
   twitter: z.string().url("Invalid Twitter URL").optional().or(z.literal("")),
-  instagram: z.string().url("Invalid Instagram URL").optional().or(z.literal("")),
-})
+  instagram: z
+    .string()
+    .url("Invalid Instagram URL")
+    .optional()
+    .or(z.literal("")),
+});
 
-type ProfileFormData = z.infer<typeof profileSchema>
-type SocialFormData = z.infer<typeof socialSchema>
+type ProfileFormData = z.infer<typeof profileSchema>;
+type SocialFormData = z.infer<typeof socialSchema>;
 
 interface ProfileSettings {
-  name: string
-  title: string
-  email: string
-  phone: string
-  location: string
-  website: string
-  bio: string
-  avatar: string
+  name: string;
+  title: string;
+  email: string;
+  phone: string;
+  location: string;
+  website: string;
+  bio: string;
+  avatar: string;
 }
 
 interface SocialLinks {
-  github: string
-  linkedin: string
-  twitter: string
-  instagram: string
+  github: string;
+  linkedin: string;
+  twitter: string;
+  instagram: string;
 }
 
 interface NotificationSettings {
-  emailNotifications: boolean
-  newMessages: boolean
-  projectUpdates: boolean
-  weeklyDigest: boolean
-  marketingEmails: boolean
+  emailNotifications: boolean;
+  newMessages: boolean;
+  projectUpdates: boolean;
+  weeklyDigest: boolean;
+  marketingEmails: boolean;
 }
 
 interface DisplaySettings {
-  theme: "light" | "dark" | "system"
-  showAvailability: boolean
-  showEmail: boolean
-  showPhone: boolean
+  theme: "light" | "dark" | "system";
+  showAvailability: boolean;
+  showEmail: boolean;
+  showPhone: boolean;
 }
 
 export default function SettingsPage() {
-  const { user } = useAuth()
-  
   // Profile form
-  const { register: registerProfile, handleSubmit: handleSubmitProfile, control: controlProfile, formState: formStateProfile, watch: watchProfile } = useForm<ProfileFormData>({
+  const {
+    register: registerProfile,
+    handleSubmit: handleSubmitProfile,
+    control: controlProfile,
+    formState: formStateProfile,
+    watch: watchProfile,
+  } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     mode: "onChange",
     defaultValues: {
-      name: user?.name || "",
-      title: user?.title || "",
-      email: user?.email || "",
-      phone: user?.phone || "",
-      location: user?.address || "",
-      website: user?.website || "",
-      bio: user?.bio || "",
+      name: "Kisibo Jonathan",
+      title: "Full-stack Developer",
+      email: "kisibojonathan150@gmail.com",
+      phone: "",
+      location: "Nairobi, Kenya",
+      website: "https://kisibojonathan.dev",
+      bio: "Building scalable web applications with modern technologies.",
     },
-  })
+  });
 
-  const profileName = watchProfile("name")
-  const profileBio = watchProfile("bio")
+  const profileName = watchProfile("name");
+  const profileBio = watchProfile("bio");
 
   // Social form
-  const { register: registerSocial, handleSubmit: handleSubmitSocial, control: controlSocial, formState: formStateSocial } = useForm<SocialFormData>({
+  const {
+    register: registerSocial,
+    handleSubmit: handleSubmitSocial,
+    control: controlSocial,
+    formState: formStateSocial,
+  } = useForm<SocialFormData>({
     resolver: zodResolver(socialSchema),
     mode: "onChange",
     defaultValues: {
@@ -123,11 +142,12 @@ export default function SettingsPage() {
       twitter: "",
       instagram: "",
     },
-  })
+  });
 
   const [profile, setProfile] = useState({
-    avatar: user?.avatarUrl?.url || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQzR0bIMZ71HVeR5zF4PihQaDvTQQk6bsVERw&s",
-  })
+    avatar:
+      "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQzR0bIMZ71HVeR5zF4PihQaDvTQQk6bsVERw&s",
+  });
 
   const [notifications, setNotifications] = useState<NotificationSettings>({
     emailNotifications: true,
@@ -135,50 +155,52 @@ export default function SettingsPage() {
     projectUpdates: true,
     weeklyDigest: false,
     marketingEmails: false,
-  })
+  });
 
   const [display, setDisplay] = useState<DisplaySettings>({
     theme: "system",
     showAvailability: true,
     showEmail: true,
     showPhone: false,
-  })
+  });
 
-  const [isSaving, setIsSaving] = useState(false)
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleSaveProfile = async (values: ProfileFormData) => {
-    setIsSaving(true)
+    setIsSaving(true);
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   const handleSaveSocial = async (values: SocialFormData) => {
-    setIsSaving(true)
+    setIsSaving(true);
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   const handleSave = async () => {
-    setIsSaving(true)
+    setIsSaving(true);
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    setIsSaving(false)
-  }
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    setIsSaving(false);
+  };
 
   return (
     <div className="p-6 lg:p-8 max-w-4xl">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8 animate-fade-in">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight animate-fade-in [animation-delay:50ms]">Settings</h1>
+          <h1 className="text-3xl font-bold tracking-tight animate-fade-in [animation-delay:50ms]">
+            Settings
+          </h1>
           <p className="text-muted-foreground mt-1 animate-fade-in [animation-delay:100ms]">
             Manage your profile and preferences
           </p>
@@ -215,14 +237,19 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Profile Photo</CardTitle>
-              <CardDescription>This will be displayed on your portfolio and contact page</CardDescription>
+              <CardDescription>
+                This will be displayed on your portfolio and contact page
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-6">
                 <Avatar className="h-24 w-24">
                   <AvatarImage src={profile.avatar || "/placeholder.svg"} />
                   <AvatarFallback className="text-2xl">
-                    {profileName?.split(" ").map(n => n?.[0]).join("") || "?"}
+                    {profileName
+                      ?.split(" ")
+                      .map((n) => n?.[0])
+                      .join("") || "?"}
                   </AvatarFallback>
                 </Avatar>
                 <div className="space-y-2">
@@ -245,26 +272,31 @@ export default function SettingsPage() {
               <CardDescription>Your basic profile information</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmitProfile(handleSaveProfile)} className="space-y-4">
+              <form
+                onSubmit={handleSubmitProfile(handleSaveProfile)}
+                className="space-y-4"
+              >
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="name">Full Name</Label>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                      placeholder="Enter your full name"
+                      <Input
+                        placeholder="Enter your full name"
                         id="name"
                         {...registerProfile("name")}
                         className="pl-9"
                       />
                     </div>
                     {formStateProfile.errors.name && (
-                      <p className="text-sm text-destructive">{formStateProfile.errors.name.message}</p>
+                      <p className="text-sm text-destructive">
+                        {formStateProfile.errors.name.message}
+                      </p>
                     )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="title">Professional Title</Label>
-                    <Input 
+                    <Input
                       id="title"
                       {...registerProfile("title")}
                       placeholder="e.g., Full-Stack Developer"
@@ -277,8 +309,8 @@ export default function SettingsPage() {
                     <Label htmlFor="email">Email Address</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                      placeholder="Enter your email address"
+                      <Input
+                        placeholder="Enter your email address"
                         id="email"
                         type="email"
                         {...registerProfile("email")}
@@ -286,15 +318,17 @@ export default function SettingsPage() {
                       />
                     </div>
                     {formStateProfile.errors.email && (
-                      <p className="text-sm text-destructive">{formStateProfile.errors.email.message}</p>
+                      <p className="text-sm text-destructive">
+                        {formStateProfile.errors.email.message}
+                      </p>
                     )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Phone Number</Label>
                     <div className="relative">
                       <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                      placeholder="Enter your phone number"
+                      <Input
+                        placeholder="Enter your phone number"
                         id="phone"
                         type="tel"
                         {...registerProfile("phone")}
@@ -309,8 +343,8 @@ export default function SettingsPage() {
                     <Label htmlFor="location">Location</Label>
                     <div className="relative">
                       <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                      placeholder="Enter your location"
+                      <Input
+                        placeholder="Enter your location"
                         id="location"
                         {...registerProfile("location")}
                         className="pl-9"
@@ -321,8 +355,8 @@ export default function SettingsPage() {
                     <Label htmlFor="website">Website</Label>
                     <div className="relative">
                       <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                      placeholder="Enter your website URL"
+                      <Input
+                        placeholder="Enter your website URL"
                         id="website"
                         type="url"
                         {...registerProfile("website")}
@@ -330,7 +364,9 @@ export default function SettingsPage() {
                       />
                     </div>
                     {formStateProfile.errors.website && (
-                      <p className="text-sm text-destructive">{formStateProfile.errors.website.message}</p>
+                      <p className="text-sm text-destructive">
+                        {formStateProfile.errors.website.message}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -347,12 +383,17 @@ export default function SettingsPage() {
                     {profileBio?.length || 0}/500 characters
                   </p>
                   {formStateProfile.errors.bio && (
-                    <p className="text-sm text-destructive">{formStateProfile.errors.bio.message}</p>
+                    <p className="text-sm text-destructive">
+                      {formStateProfile.errors.bio.message}
+                    </p>
                   )}
                 </div>
 
                 <div className="flex gap-2">
-                  <Button type="submit" disabled={isSaving || !formStateProfile.isValid}>
+                  <Button
+                    type="submit"
+                    disabled={isSaving || !formStateProfile.isValid}
+                  >
                     <Save className="h-4 w-4 mr-2" />
                     {isSaving ? "Saving..." : "Save Profile"}
                   </Button>
@@ -367,10 +408,15 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Social Links</CardTitle>
-              <CardDescription>Connect your social media profiles</CardDescription>
+              <CardDescription>
+                Connect your social media profiles
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmitSocial(handleSaveSocial)} className="space-y-4">
+              <form
+                onSubmit={handleSubmitSocial(handleSaveSocial)}
+                className="space-y-4"
+              >
                 <div className="space-y-2">
                   <Label htmlFor="github">GitHub</Label>
                   <div className="relative">
@@ -384,7 +430,9 @@ export default function SettingsPage() {
                     />
                   </div>
                   {formStateSocial.errors.github && (
-                    <p className="text-sm text-destructive">{formStateSocial.errors.github.message}</p>
+                    <p className="text-sm text-destructive">
+                      {formStateSocial.errors.github.message}
+                    </p>
                   )}
                 </div>
 
@@ -401,7 +449,9 @@ export default function SettingsPage() {
                     />
                   </div>
                   {formStateSocial.errors.linkedin && (
-                    <p className="text-sm text-destructive">{formStateSocial.errors.linkedin.message}</p>
+                    <p className="text-sm text-destructive">
+                      {formStateSocial.errors.linkedin.message}
+                    </p>
                   )}
                 </div>
 
@@ -418,7 +468,9 @@ export default function SettingsPage() {
                     />
                   </div>
                   {formStateSocial.errors.twitter && (
-                    <p className="text-sm text-destructive">{formStateSocial.errors.twitter.message}</p>
+                    <p className="text-sm text-destructive">
+                      {formStateSocial.errors.twitter.message}
+                    </p>
                   )}
                 </div>
 
@@ -435,12 +487,17 @@ export default function SettingsPage() {
                     />
                   </div>
                   {formStateSocial.errors.instagram && (
-                    <p className="text-sm text-destructive">{formStateSocial.errors.instagram.message}</p>
+                    <p className="text-sm text-destructive">
+                      {formStateSocial.errors.instagram.message}
+                    </p>
                   )}
                 </div>
 
                 <div className="flex gap-2 pt-4">
-                  <Button type="submit" disabled={isSaving || !formStateSocial.isValid}>
+                  <Button
+                    type="submit"
+                    disabled={isSaving || !formStateSocial.isValid}
+                  >
                     <Save className="h-4 w-4 mr-2" />
                     {isSaving ? "Saving..." : "Save Social Links"}
                   </Button>
@@ -455,7 +512,9 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Email Notifications</CardTitle>
-              <CardDescription>Choose what emails you want to receive</CardDescription>
+              <CardDescription>
+                Choose what emails you want to receive
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-center justify-between">
@@ -467,8 +526,11 @@ export default function SettingsPage() {
                 </div>
                 <Switch
                   checked={notifications.emailNotifications}
-                  onCheckedChange={(checked) => 
-                    setNotifications({ ...notifications, emailNotifications: checked })
+                  onCheckedChange={(checked) =>
+                    setNotifications({
+                      ...notifications,
+                      emailNotifications: checked,
+                    })
                   }
                 />
               </div>
@@ -482,7 +544,7 @@ export default function SettingsPage() {
                 </div>
                 <Switch
                   checked={notifications.newMessages}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked) =>
                     setNotifications({ ...notifications, newMessages: checked })
                   }
                 />
@@ -497,8 +559,11 @@ export default function SettingsPage() {
                 </div>
                 <Switch
                   checked={notifications.projectUpdates}
-                  onCheckedChange={(checked) => 
-                    setNotifications({ ...notifications, projectUpdates: checked })
+                  onCheckedChange={(checked) =>
+                    setNotifications({
+                      ...notifications,
+                      projectUpdates: checked,
+                    })
                   }
                 />
               </div>
@@ -512,8 +577,11 @@ export default function SettingsPage() {
                 </div>
                 <Switch
                   checked={notifications.weeklyDigest}
-                  onCheckedChange={(checked) => 
-                    setNotifications({ ...notifications, weeklyDigest: checked })
+                  onCheckedChange={(checked) =>
+                    setNotifications({
+                      ...notifications,
+                      weeklyDigest: checked,
+                    })
                   }
                 />
               </div>
@@ -527,8 +595,11 @@ export default function SettingsPage() {
                 </div>
                 <Switch
                   checked={notifications.marketingEmails}
-                  onCheckedChange={(checked) => 
-                    setNotifications({ ...notifications, marketingEmails: checked })
+                  onCheckedChange={(checked) =>
+                    setNotifications({
+                      ...notifications,
+                      marketingEmails: checked,
+                    })
                   }
                 />
               </div>
@@ -541,14 +612,16 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Appearance</CardTitle>
-              <CardDescription>Customize how your dashboard looks</CardDescription>
+              <CardDescription>
+                Customize how your dashboard looks
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label>Theme</Label>
                 <Select
                   value={display.theme}
-                  onValueChange={(value: "light" | "dark" | "system") => 
+                  onValueChange={(value: "light" | "dark" | "system") =>
                     setDisplay({ ...display, theme: value })
                   }
                 >
@@ -571,7 +644,9 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Privacy</CardTitle>
-              <CardDescription>Control what information is visible on your portfolio</CardDescription>
+              <CardDescription>
+                Control what information is visible on your portfolio
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-center justify-between">
@@ -583,7 +658,7 @@ export default function SettingsPage() {
                 </div>
                 <Switch
                   checked={display.showAvailability}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked) =>
                     setDisplay({ ...display, showAvailability: checked })
                   }
                 />
@@ -598,7 +673,7 @@ export default function SettingsPage() {
                 </div>
                 <Switch
                   checked={display.showEmail}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked) =>
                     setDisplay({ ...display, showEmail: checked })
                   }
                 />
@@ -613,7 +688,7 @@ export default function SettingsPage() {
                 </div>
                 <Switch
                   checked={display.showPhone}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked) =>
                     setDisplay({ ...display, showPhone: checked })
                   }
                 />
@@ -646,5 +721,5 @@ export default function SettingsPage() {
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }

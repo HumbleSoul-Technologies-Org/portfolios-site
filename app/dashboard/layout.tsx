@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -16,12 +16,13 @@ import {
   ChevronLeft,
   Moon,
   Sun,
-  LogOut,
   Key,
+  LogOut,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/useAuth";
 
 const sidebarLinks = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
@@ -38,18 +39,30 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const router = useRouter();
+  const { isAuthenticated, loading, logout } = useAuth();
 
-  async function handleLogout() {
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-    } catch (e) {
-      // ignore
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      router.replace("/login");
     }
-    router.push("/login");
+  }, [loading, isAuthenticated, router]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="rounded-2xl border border-border bg-card px-8 py-10 text-center shadow-lg shadow-black/5">
+          <p className="text-lg font-medium">Checking your session…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
   }
 
   return (
@@ -160,13 +173,13 @@ export default function DashboardLayout({
           </Button>
 
           <Button
-            variant={collapsed ? "ghost" : "outline"}
+            variant="ghost"
             size={collapsed ? "icon" : "default"}
-            onClick={handleLogout}
+            onClick={logout}
             className={cn("w-full", collapsed && "w-auto")}
           >
             <LogOut className="h-4 w-4" />
-            {!collapsed && <span className="ml-2">Sign out</span>}
+            {!collapsed && <span className="ml-2">Logout</span>}
           </Button>
 
           <Link href="/" className={cn("block", collapsed && "w-full")}>

@@ -15,7 +15,6 @@ import {
   ChevronLeft,
   Moon,
   Sun,
-  LogOut,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
@@ -35,15 +34,10 @@ export default function DashboardShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const router = useRouter();
-
-  async function logout() {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    router.push('/login');
-  }
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -160,16 +154,6 @@ export default function DashboardShell({
           >
             <ChevronLeft className="h-4 w-4" />
             {!collapsed && <span className="ml-2">Back to site</span>}
-          </Button>
-
-          <Button
-            variant="ghost"
-            size={collapsed ? "icon" : "default"}
-            onClick={logout}
-            className={cn("w-full", collapsed && "w-auto")}
-          >
-            <LogOut className="h-4 w-4" />
-            {!collapsed && <span className="ml-2">Logout</span>}
           </Button>
         </div>
       </aside>

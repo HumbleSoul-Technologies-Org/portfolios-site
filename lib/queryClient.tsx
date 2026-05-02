@@ -1,8 +1,7 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import axios from "axios";
 
-const BASE_URL =
-  (process.env.NEXT_PUBLIC_API_URL as string) || "http://localhost:6969/api";
+const BASE_URL = (process.env.NEXT_PUBLIC_API_URL as string) || "/api";
 
 // Axios instance for GET only
 const axiosClient = axios.create({

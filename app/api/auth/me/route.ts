@@ -1,17 +1,19 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { verifySession } from "@/lib/auth";
 
-export async function GET() {
-  try {
-    const cookieStore = await cookies();
-    const token = cookieStore?.get?.("session")?.value;
-    const username = verifySession(token);
+export async function GET(req: Request) {
+  const authHeader = req.headers.get("authorization") || "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : null;
 
-    if (!username) return NextResponse.json({ authenticated: false }, { status: 401 });
-
-    return NextResponse.json({ authenticated: true, username });
-  } catch (err) {
-    return NextResponse.json({ authenticated: false }, { status: 401 });
+  if (!token) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-} 
+
+  const username = verifySession(token);
+  if (!username) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  return NextResponse.json({ user: { username } });
+}
+ 

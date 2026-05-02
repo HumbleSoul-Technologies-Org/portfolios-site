@@ -1,144 +1,187 @@
-"use client";
+﻿"use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
-// TODO: TEMP: Re-add axios import when restoring real authentication
-// import axios from "axios";
-import { toast } from "@/hooks/use-toast";
+import { apiRequest } from "./queryClient";
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  token: string;
-  title?: string;
-  avatarUrl?: { url: string; puplic_id: string };
-  phone?: string;
-  address?: string;
-  website?: string;
-  bio?: string;
-}
-
-// TODO: TEMP: Remove hardcoded user and token - restore real authentication
-const HARDCODED_TOKEN = "dev-temp-session-token-12345";
-const HARDCODED_USER: User = {
-  id: "dev-temp-user-id",
-  name: "Dev User",
-  email: "dev@example.com",
-  token: HARDCODED_TOKEN,
-  title: "Developer",
-  bio: "Temporary hardcoded user for development",
+type User = {
+  username: string;
 };
 
 type AuthContextType = {
   user: User | null;
+  token: string | null;
   loading: boolean;
+  isAuthenticated: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
-  token?: string;
 };
+
+const STORAGE_USER_KEY = "auth_user";
+const STORAGE_TOKEN_KEY = "auth_token";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function loadStoredSession() {
+  if (typeof window === "undefined") {
+    return { user: null, token: null };
+  }
+
+  const token = localStorage.getItem(STORAGE_TOKEN_KEY);
+  const userJson = localStorage.getItem(STORAGE_USER_KEY);
+
+  if (!token || !userJson) {
+    return { user: null, token: null };
+  }
+
+  try {
+    return { user: JSON.parse(userJson) as User, token };
+  } catch {
+    return { user: null, token: null };
+  }
+}
+
+function persistSession(user: User, token: string) {
+  localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(user));
+  localStorage.setItem(STORAGE_TOKEN_KEY, token);
+}
+
+function clearSessionStorage() {
+  localStorage.removeItem(STORAGE_USER_KEY);
+  localStorage.removeItem(STORAGE_TOKEN_KEY);
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | any>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  async function refresh() {
+  const isAuthenticated = useMemo(() => !!user && !!token, [user, token]);
+
+  const refresh = async () => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
     setLoading(true);
-    try {
-      // TODO: TEMP: Replace with real refresh() logic from localStorage
-      // This temporarily uses hardcoded credentials for development
-      setToken(HARDCODED_TOKEN);
-      // Sync cookie
-      document.cookie = `session=${encodeURIComponent(HARDCODED_TOKEN)}; path=/; max-age=86400`;
-      setUser(HARDCODED_USER);
-    } catch (err) {
-      console.error("Refresh error:", err);
+
+    const stored = loadStoredSession();
+    if (!stored.token || !stored.user) {
+      clearSessionStorage();
       setUser(null);
+      setToken(null);
+      setLoading(false);
+      return;
+    }
+
+    setUser(stored.user);
+    setToken(stored.token);
+
+    try {
+      // Make direct fetch call to check auth status without throwing on 401
+      const BASE_URL = (process.env.NEXT_PUBLIC_API_URL as string) || "/api";
+      const res = await fetch(`${BASE_URL}/auth/me`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${stored.token}`,
+        },
+      });
+
+      if (res.status === 401) {
+        // Token is invalid, clear session
+        setUser(null);
+        setToken(null);
+        clearSessionStorage();
+        setLoading(false);
+        return;
+      }
+
+      if (!res.ok) {
+        // Server error, but keep session for now
+        console.warn("Auth check failed, keeping stored session");
+        setLoading(false);
+        return;
+      }
+
+      const data = await res.json();
+      const verifiedUser = data?.user ?? data?.data?.user ?? data?.data?.admin;
+
+      if (!verifiedUser) {
+        // Invalid response, clear session
+        setUser(null);
+        setToken(null);
+        clearSessionStorage();
+      } else {
+        // Valid session, update user data
+        setUser(verifiedUser);
+        persistSession(verifiedUser, stored.token);
+      }
+    } catch (error) {
+      // Network error, keep stored session
+      console.warn("Auth check network error, keeping stored session", error);
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    // Clean up any corrupted localStorage entries
-    const profile = localStorage.getItem("profile");
-    const token = localStorage.getItem("token");
-
-    if (profile === "undefined") {
-      localStorage.removeItem("profile");
-    }
-    if (token === "undefined") {
-      localStorage.removeItem("token");
-    }
-
     refresh();
   }, []);
 
-  async function login(username: string, password: string) {
+  const login = async (username: string, password: string) => {
+    setLoading(true);
     try {
-      // TODO: TEMP: Remove hardcoded login bypass - restore real API call
-      // For now, we're bypassing the external API and using hardcoded credentials
-      const admin = HARDCODED_USER;
-      const token = HARDCODED_TOKEN;
-
-      // Store in localStorage first
-      localStorage.setItem("profile", JSON.stringify(admin));
-      localStorage.setItem("token", token);
-
-      // Set session cookie with proper formatting
-      const cookieValue = `${token}`;
-      document.cookie = `session=${encodeURIComponent(cookieValue)}; path=/; max-age=86400`;
-
-      // Update state
-      setUser(admin);
-      setToken(token);
-      // Navigate to dashboard using Next router
-      router.push("/dashboard");
-    } catch (error: any) {
-      console.error("Login error:", error);
-      const errorMsg =
-        error.response?.data?.message || error.message || "Login failed";
-      toast({
-        title: "Login failed",
-        description: errorMsg,
-        variant: "destructive",
+      const res = await apiRequest("POST", "/auth/login", {
+        username,
+        password,
       });
-    }
-  }
+      const data = await res.json();
+      const tokenData = data?.token ?? data?.data?.token;
+      const userData = data?.user ?? data?.data?.admin;
 
-  async function logout() {
-    try {
-      // Clear state and storage
-      setUser(null);
-      setToken(null);
-      localStorage.removeItem("profile");
-      localStorage.removeItem("token");
-      document.cookie = "session=; path=/; max-age=0";
-
-      // Call logout API (best-effort)
-      try {
-        await fetch("/api/auth/logout", { method: "POST" });
-      } catch (apiErr) {
-        console.error("API logout failed (but continuing):", apiErr);
+      if (!tokenData || !userData) {
+        throw new Error(data?.error || "Authentication failed");
       }
 
-      // Redirect to login
-      router.push("/login");
-    } catch (err) {
-      console.error("Logout error:", err);
-      // Force redirect even if something fails
-      window.location.href = "/login";
+      setUser(userData);
+      setToken(tokenData);
+      persistSession(userData, tokenData);
+    } finally {
+      setLoading(false);
     }
-  }
+  };
+
+  const logout = async () => {
+    const currentToken = token || loadStoredSession().token;
+    setUser(null);
+    setToken(null);
+    clearSessionStorage();
+
+    try {
+      await apiRequest(
+        "POST",
+        "/auth/logout",
+        undefined,
+        currentToken ?? undefined,
+      );
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+
+    router.push("/login");
+  };
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, login, logout, refresh, token }}
+      value={{ user, token, loading, isAuthenticated, login, logout, refresh }}
     >
       {children}
     </AuthContext.Provider>

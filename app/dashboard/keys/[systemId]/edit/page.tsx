@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,7 +19,7 @@ import {
 import { useKeysData } from "@/lib/hooks/useKeysData";
 import { toast } from "@/hooks/use-toast";
 import { ArrowLeft, Loader } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
+import { SystemProfile } from "@/lib/types/keys";
 
 const systemSchema = z.object({
   name: z
@@ -32,22 +32,18 @@ const systemSchema = z.object({
     .max(500, "Description must not exceed 500 characters"),
   image: z.string().url("Image must be a valid URL"),
   link: z.string().url("Link must be a valid URL"),
-  latestVersion: z
-    .string()
-    .optional()
-    .default("1.0.0")
-    .refine(
-      (val) => /^\d+\.\d+\.\d+$/.test(val),
-      "Version must be in format X.Y.Z",
-    ),
 });
 
 type SystemFormValues = z.infer<typeof systemSchema>;
 
-export default function CreateSystemPage() {
+export default function EditSystemPage() {
+  const params = useParams();
   const router = useRouter();
-  const { createSystem } = useKeysData();
+  const systemId = params.systemId as string;
+  const { getSystemById, updateSystem, isLoading } = useKeysData();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const system = getSystemById(systemId) as SystemProfile | undefined;
 
   const { register, handleSubmit, formState, reset } =
     useForm<SystemFormValues>({
@@ -58,10 +54,27 @@ export default function CreateSystemPage() {
       },
     });
 
+  useEffect(() => {
+    if (system) {
+      reset({
+        name: system.name,
+        description: system.description,
+        image: system.image,
+        link: system.link,
+        latestVersion: system.latestVersion || "1.0.0",
+      });
+    }
+  }, [system, reset]);
+
   async function onSubmit(values: SystemFormValues) {
+    if (!systemId) {
+      return;
+    }
+
     setIsSubmitting(true);
+
     try {
-      await createSystem({
+      await updateSystem(systemId, {
         name: values.name,
         description: values.description,
         image: values.image,
@@ -70,17 +83,16 @@ export default function CreateSystemPage() {
       });
 
       toast({
-        title: "Success!",
-        description: "System profile created successfully",
+        title: "System updated",
+        description: "Your system profile was updated successfully.",
         variant: "default",
       });
 
-      reset();
-      router.push("/dashboard/keys");
+      router.push(`/dashboard/keys/${systemId}`);
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to create system profile",
+        title: "Update failed",
+        description: "Unable to update the system profile.",
         variant: "destructive",
       });
     } finally {
@@ -88,38 +100,43 @@ export default function CreateSystemPage() {
     }
   }
 
+  if (isLoading || !system) {
+    return (
+      <div className="flex items-center justify-center min-h-screen p-6">
+        <p className="text-muted-foreground">Loading system details...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 p-6">
-      {/* Header */}
       <div className="flex items-center gap-4">
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => router.push("/dashboard/keys")}
+          onClick={() => router.push(`/dashboard/keys/${systemId}`)}
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            Create System Profile
+            Edit System Profile
           </h1>
           <p className="text-muted-foreground mt-1">
-            Set up a new system to start generating primary keys
+            Adjust the profile details for {system.name}
           </p>
         </div>
       </div>
 
-      {/* Form Card */}
       <Card className="max-w-2xl">
         <CardHeader>
-          <CardTitle>System Details</CardTitle>
+          <CardTitle>Edit System</CardTitle>
           <CardDescription>
-            Provide information about your system and services
+            Update the system profile details and save your changes.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* System Name */}
             <div className="space-y-2">
               <Label htmlFor="name">System Name *</Label>
               <Input
@@ -135,7 +152,6 @@ export default function CreateSystemPage() {
               )}
             </div>
 
-            {/* Description */}
             <div className="space-y-2">
               <Label htmlFor="description">Description *</Label>
               <Textarea
@@ -152,7 +168,6 @@ export default function CreateSystemPage() {
               )}
             </div>
 
-            {/* Image URL */}
             <div className="space-y-2">
               <Label htmlFor="image">Logo/Image URL *</Label>
               <Input
@@ -166,12 +181,8 @@ export default function CreateSystemPage() {
                   {formState.errors.image.message}
                 </p>
               )}
-              <p className="text-xs text-muted-foreground">
-                Use a direct image URL (PNG, JPG recommended)
-              </p>
             </div>
 
-            {/* System Link */}
             <div className="space-y-2">
               <Label htmlFor="link">System Link *</Label>
               <Input
@@ -187,7 +198,6 @@ export default function CreateSystemPage() {
               )}
             </div>
 
-            {/* Latest Version */}
             <div className="space-y-2">
               <Label htmlFor="latestVersion">Latest Version</Label>
               <Input
@@ -201,12 +211,8 @@ export default function CreateSystemPage() {
                   {formState.errors.latestVersion.message}
                 </p>
               )}
-              <p className="text-xs text-muted-foreground">
-                Format: X.Y.Z (e.g., 1.0.0)
-              </p>
             </div>
 
-            {/* Buttons */}
             <div className="flex gap-2 pt-4">
               <Button
                 type="submit"
@@ -214,16 +220,16 @@ export default function CreateSystemPage() {
               >
                 {isSubmitting ? (
                   <>
-                    Creating... <Loader className="animate-spin" />
+                    Saving... <Loader className="animate-spin" />
                   </>
                 ) : (
-                  "Create System"
+                  "Save Changes"
                 )}
               </Button>
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => router.push("/dashboard/keys")}
+                onClick={() => router.push(`/dashboard/keys/${systemId}`)}
                 disabled={isSubmitting}
               >
                 Cancel

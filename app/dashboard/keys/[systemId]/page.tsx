@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { use, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,6 +38,8 @@ import {
   MarkKeyAsUsedInput,
 } from "@/lib/types/keys";
 import { KeyDetailsModal } from "@/components/keys/KeyDetailsModal";
+import { DeleteSystemDialog } from "@/components/keys/DeleteSystemDialog";
+import { useEffect } from "react";
 
 export default function SystemKeysPage() {
   const params = useParams();
@@ -50,7 +52,8 @@ export default function SystemKeysPage() {
     // filterKeys,
     copyToClipboard,
     generateKeys,
-    // markKeyAsUsed,
+    markKeyAsUsed,
+    deleteSystem,
     getSystemStats,
     systems,
     isLoading,
@@ -63,10 +66,12 @@ export default function SystemKeysPage() {
   const [selectedProductKey, setSelectedProductKey] =
     useState<ProductKey | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const system = getSystemById(systemId);
+  const system = getSystemById(systemId) || null;
 
-  if (isLoading || !system) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p className="text-muted-foreground">Loading system...</p>
@@ -74,10 +79,27 @@ export default function SystemKeysPage() {
     );
   }
 
-  const totalKeys = system?.productKeys?.keys?.length || 0;
+  if (!system) {
+    return (
+      <div className="flex items-center justify-center min-h-screen p-6">
+        <div className="space-y-3 rounded-lg border bg-background p-8 text-center shadow-sm">
+          <p className="text-xl font-semibold">System not found</p>
+          <p className="text-sm text-muted-foreground">
+            The requested system profile could not be located.
+          </p>
+          <Button onClick={() => router.push("/dashboard/keys")}>
+            Return to systems
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const totalKeys = system?.productKeys?.length || 0;
+
   const usedKeys =
-    (system as any)?.productKeys?.keys?.filter((k: any) => k.status === "used")
-      .length || 0;
+    system?.productKeys?.keys?.filter((k: any) => k.status === "used").length ||
+    0;
   const unusedKeys = totalKeys - usedKeys || 0;
 
   const usedPercentage =
@@ -119,17 +141,36 @@ export default function SystemKeysPage() {
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.push("/dashboard/keys")}
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold tracking-tight">{system.name}</h1>
-          <p className="text-muted-foreground mt-1">{system.description}</p>
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.push("/dashboard/keys")}
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">{system.name}</h1>
+            <p className="text-muted-foreground mt-1">{system.description}</p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.push(`/dashboard/keys/${systemId}/edit`)}
+          >
+            Edit Profile
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => setIsDeleteOpen(true)}
+          >
+            Delete Profile
+          </Button>
         </div>
       </div>
 
@@ -141,7 +182,7 @@ export default function SystemKeysPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {system?.productKeys?.keys?.length || 0}
+              {system?.productKeys?.length || 0}
             </div>
             <p className="text-xs text-muted-foreground">
               Generated for this system
@@ -177,7 +218,7 @@ export default function SystemKeysPage() {
           <CardContent>
             <div className="text-2xl font-bold">
               Ugx{" "}
-              {(system as any)?.productKeys?.keys
+              {system?.productKeys?.keys
                 ?.filter((k: any) => k.status === "used")
                 .reduce((sum: number, key: any) => sum + (key.price || 0), 0)
                 .toLocaleString() || "0"}
@@ -391,6 +432,38 @@ export default function SystemKeysPage() {
           }}
         />
       )}
+
+      <DeleteSystemDialog
+        open={isDeleteOpen}
+        isDeleting={isDeleting}
+        onOpenChange={(open) => {
+          setIsDeleteOpen(open);
+          if (!open) {
+            setIsDeleting(false);
+          }
+        }}
+        onConfirm={async (password: string) => {
+          setIsDeleting(true);
+          try {
+            await deleteSystem(systemId, password);
+            toast({
+              title: "System deleted",
+              description: "The system profile was removed successfully.",
+              variant: "default",
+            });
+            router.push("/dashboard/keys");
+          } catch (error) {
+            toast({
+              title: "Delete failed",
+              description: "Unable to delete the system profile.",
+              variant: "destructive",
+            });
+          } finally {
+            setIsDeleting(false);
+            setIsDeleteOpen(false);
+          }
+        }}
+      />
     </div>
   );
 }

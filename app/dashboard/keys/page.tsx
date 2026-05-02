@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useKeysData } from "@/lib/hooks/useKeysData";
 import { Plus, Package, Key } from "lucide-react";
 
@@ -28,8 +29,32 @@ export default function KeysPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-muted-foreground">Loading systems...</p>
+      <div className="space-y-6 p-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-3">
+            <Skeleton className="h-10 w-72 rounded-full" />
+            <Skeleton className="h-4 w-96 rounded-full" />
+          </div>
+          <Skeleton className="h-10 w-40 rounded-full" />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <Card key={index} className="border border-border">
+              <CardHeader>
+                <Skeleton className="h-6 w-3/4 rounded-full" />
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Skeleton className="h-4 w-full rounded-full" />
+                <Skeleton className="h-4 w-5/6 rounded-full" />
+                <div className="grid grid-cols-2 gap-3">
+                  <Skeleton className="h-8 w-full rounded-full" />
+                  <Skeleton className="h-8 w-full rounded-full" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }
@@ -105,7 +130,7 @@ export default function KeysPage() {
                       Keys <Key />
                     </p>
                     <p className="font-semibold">
-                      {system.productKeys?.keys.length || 0}
+                      {system.productKeys?.length || 0}
                     </p>
                   </div>
                 </div>
