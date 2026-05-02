@@ -11,10 +11,14 @@ export interface SystemProfile {
   link: string;
   latestVersion: string;
     numberOfBusinesses: number;
-    productKeys?: ProductKey[];
+    productKeys?: ProductKeysContainer | ProductKey[];
   createdAt?: Date;
     lastUpdatedAt?: Date;
     updatedAt?: Date;
+}
+
+export interface ProductKeysContainer {
+  keys: ProductKey[];
 }
 
 export interface ProductKey {

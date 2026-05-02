@@ -130,7 +130,7 @@ export default function KeysPage() {
                       Keys <Key />
                     </p>
                     <p className="font-semibold">
-                      {system.productKeys?.length || 0}
+                      {system.productKeys?.keys?.length || 0}
                     </p>
                   </div>
                 </div>

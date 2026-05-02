@@ -18,6 +18,24 @@ const STORAGE_KEYS = {
   KEYS: "pk-keys",
 };
 
+type ProductKeysContainer = { keys: ProductKey[] };
+
+const normalizeProductKeys = (
+  productKeys?: SystemProfile["productKeys"] | ProductKey[],
+): ProductKeysContainer => {
+  if (!productKeys) return { keys: [] };
+  if (Array.isArray(productKeys)) return { keys: productKeys };
+  if (productKeys && "keys" in productKeys && Array.isArray(productKeys.keys)) {
+    return { keys: productKeys.keys };
+  }
+  return { keys: [] };
+};
+
+const normalizeSystem = (system: SystemProfile): SystemProfile => ({
+  ...system,
+  productKeys: normalizeProductKeys(system.productKeys),
+});
+
 import { useQuery } from "@tanstack/react-query";
 import { set } from "react-hook-form";
 import { useAuth } from "../useAuth";
@@ -39,11 +57,20 @@ export function useKeysData() {
         const savedSystems = localStorage.getItem(STORAGE_KEYS.SYSTEMS);
         const parsedSystems = savedSystems ? JSON.parse(savedSystems) : [];
 
-        if (Array.isArray(systemData) && systemData.length > 0) {
-          setSystems(systemData as SystemProfile[]);
+        const systemsToLoad =
+          Array.isArray(systemData) && systemData.length > 0
+            ? systemData
+            : parsedSystems;
+
+        const normalizedSystems = (
+          Array.isArray(systemsToLoad) ? systemsToLoad : []
+        ).map((sys: SystemProfile) => normalizeSystem(sys));
+
+        if (normalizedSystems.length > 0) {
+          setSystems(normalizedSystems as SystemProfile[]);
           localStorage.setItem(
             STORAGE_KEYS.SYSTEMS,
-            JSON.stringify(systemData),
+            JSON.stringify(normalizedSystems),
           );
         } else {
           setSystems([]);
@@ -52,11 +79,9 @@ export function useKeysData() {
         if (savedKeys) {
           setKeys(JSON.parse(savedKeys));
         } else {
-          const derivedKeys = (
-            Array.isArray(systemData) && systemData.length > 0
-              ? systemData
-              : parsedSystems
-          ).flatMap((sys: SystemProfile) => sys.productKeys || []);
+          const derivedKeys = normalizedSystems.flatMap(
+            (sys) => sys.productKeys?.keys || [],
+          );
           setKeys(derivedKeys);
           localStorage.setItem(STORAGE_KEYS.KEYS, JSON.stringify(derivedKeys));
         }
@@ -84,7 +109,7 @@ export function useKeysData() {
   // Get keys for a specific system
   const getSystemKeys = useCallback(
     (systemId: string) =>
-      systems.find((sys) => sys.id === systemId)?.productKeys || [],
+      systems.find((sys) => sys.id === systemId)?.productKeys?.keys || [],
     [systems],
   );
 
@@ -117,15 +142,18 @@ export function useKeysData() {
         });
       }
 
-      const existingKeys =
-        systems.find((sys) => sys.id === systemId)?.productKeys || [];
+      const systemToUpdate = systems.find((sys) => sys.id === systemId);
+      const existingKeys = systemToUpdate?.productKeys?.keys || [];
       const combinedKeys: ProductKey[] = [...existingKeys, ...newKeys];
 
       const updatedSystems = systems.map((sys) =>
         sys.id === systemId
           ? {
               ...sys,
-              productKeys: combinedKeys,
+              productKeys: {
+                ...normalizeProductKeys(sys.productKeys),
+                keys: combinedKeys,
+              },
             }
           : sys,
       );
@@ -147,12 +175,17 @@ export function useKeysData() {
 
         if (res.ok) {
           const data: any = await res.json();
-          const updatedKeys = data.keys || combinedKeys;
+          const serverKeys: ProductKey[] = Array.isArray(data.keys)
+            ? data.keys
+            : combinedKeys;
           const syncedSystems = updatedSystems.map((sys) =>
             sys.id === systemId
               ? {
                   ...sys,
-                  productKeys: updatedKeys,
+                  productKeys: {
+                    ...normalizeProductKeys(sys.productKeys),
+                    keys: serverKeys,
+                  },
                 }
               : sys,
           );
@@ -166,7 +199,9 @@ export function useKeysData() {
           localStorage.setItem(STORAGE_KEYS.KEYS, JSON.stringify(updatedKeys));
         }
       } catch (error) {
-        console.error("Error generating keys:", error);
+        console.log("====================================");
+        console.log(error);
+        console.log("====================================");
         toast({
           title: "Key generation failed",
           description: "Unable to sync generated keys with the API.",
@@ -182,7 +217,7 @@ export function useKeysData() {
   const markKeyAsUsed = useCallback(
     async (input: MarkKeyAsUsedInput) => {
       const updatedSystems = systems.map((sys) => {
-        const currentKeys = sys.productKeys || [];
+        const currentKeys = sys.productKeys?.keys || [];
         if (!currentKeys.some((key) => key.key === input.key)) {
           return sys;
         }
@@ -202,13 +237,16 @@ export function useKeysData() {
 
         return {
           ...sys,
-          productKeys: updatedKeys,
+          productKeys: {
+            ...normalizeProductKeys(sys.productKeys),
+            keys: updatedKeys,
+          },
         };
       });
 
       setSystems(updatedSystems);
       const updatedKeys = updatedSystems.flatMap(
-        (sys) => sys.productKeys || [],
+        (sys) => sys.productKeys?.keys || [],
       );
       setKeys(updatedKeys);
       localStorage.setItem(
@@ -261,6 +299,7 @@ export function useKeysData() {
         link: payload.link,
         latestVersion: payload.latestVersion,
         numberOfBusinesses: 0,
+        productKeys: { keys: [] },
         createdAt: new Date(),
         lastUpdatedAt: new Date(),
       };
@@ -268,9 +307,7 @@ export function useKeysData() {
       try {
         const res = await apiRequest("POST", "/systems/create", payload);
         const data: any = await res.json();
-        console.log("====================================");
-        console.log(data);
-        console.log("====================================");
+
         if (data?.savedSystem) {
           newSystem = {
             id: data.savedSystem.id || data.savedSystem._id || newSystem.id,
@@ -280,13 +317,15 @@ export function useKeysData() {
             link: data.savedSystem.link,
             latestVersion: data.savedSystem.latestVersion,
             numberOfBusinesses: data.savedSystem.numberOfBusinesses || 0,
+            productKeys: normalizeProductKeys(data.savedSystem.productKeys),
+            createdAt: data.savedSystem.createdAt
+              ? new Date(data.savedSystem.createdAt)
+              : new Date(),
+            lastUpdatedAt: data.savedSystem.lastUpdatedAt
+              ? new Date(data.savedSystem.lastUpdatedAt)
+              : new Date(),
           };
         }
-        setSystems((prev) => [...prev, newSystem]);
-        localStorage.setItem(
-          STORAGE_KEYS.SYSTEMS,
-          JSON.stringify([...systems, newSystem]),
-        );
       } catch (error) {
         console.error("Error creating system:", error);
         toast({
@@ -313,7 +352,14 @@ export function useKeysData() {
     async (systemId: string, updates: Partial<SystemProfile>) => {
       const updatedSystems = systems.map((sys) =>
         sys.id === systemId
-          ? { ...sys, ...updates, lastUpdatedAt: new Date() }
+          ? {
+              ...sys,
+              ...updates,
+              productKeys: updates.productKeys
+                ? normalizeProductKeys(updates.productKeys)
+                : normalizeProductKeys(sys.productKeys),
+              lastUpdatedAt: new Date(),
+            }
           : sys,
       );
 

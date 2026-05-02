@@ -95,7 +95,7 @@ export default function SystemKeysPage() {
     );
   }
 
-  const totalKeys = system?.productKeys?.length || 0;
+  const totalKeys = system?.productKeys?.keys?.length || 0;
 
   const usedKeys =
     system?.productKeys?.keys?.filter((k: any) => k.status === "used").length ||
@@ -182,7 +182,7 @@ export default function SystemKeysPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {system?.productKeys?.length || 0}
+              {system?.productKeys?.keys?.length || 0}
             </div>
             <p className="text-xs text-muted-foreground">
               Generated for this system
