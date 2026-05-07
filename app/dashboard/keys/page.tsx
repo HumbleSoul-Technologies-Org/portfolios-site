@@ -119,6 +119,7 @@ export default function KeysPage() {
                   )}
                 </div>
               </CardHeader>
+
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
@@ -130,20 +131,35 @@ export default function KeysPage() {
                       Keys <Key />
                     </p>
                     <p className="font-semibold">
-                      {system.productKeys?.keys?.length || 0}
+                      {system.productKeys?.keys?.filter(
+                        (k: any) => k.status === "unused",
+                      ).length || 0}
                     </p>
                   </div>
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">
-                    Last Updated
-                  </p>
-                  <p className="text-sm">
-                    {new Date(
-                      system?.updatedAt || system?.createdAt || Date.now(),
-                    ).toLocaleDateString()}
-                  </p>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">
+                      Last Updated
+                    </p>
+                    <p className="text-sm">
+                      {new Date(
+                        system?.updatedAt || system?.createdAt || Date.now(),
+                      ).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">
+                      Used Keys
+                    </p>
+                    <p className="text-sm">
+                      {system.productKeys?.keys?.filter(
+                        (k: any) => k.status === "used",
+                      ).length || 0}
+                    </p>
+                  </div>
                 </div>
+
                 {system.link && (
                   <a
                     href={system.link}
