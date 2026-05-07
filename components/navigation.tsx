@@ -7,6 +7,7 @@ import { Menu, Moon, Sun, X } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/useAuth";
 
 const navItems = [
   { href: "/", label: "Home" },
@@ -20,6 +21,7 @@ const navItems = [
 export function Navigation() {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
+  const { isAuthenticated } = useAuth();
   const [isOpen, setIsOpen] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
 
@@ -64,6 +66,17 @@ export function Navigation() {
         </div>
 
         <div className="flex items-center gap-2">
+          {isAuthenticated && (
+            <Button
+              asChild
+              variant="default"
+              size="sm"
+              className="transition-all duration-300 hover:scale-105"
+            >
+              <Link href="/dashboard">Dashboard</Link>
+            </Button>
+          )}
+
           {mounted && (
             <Button
               variant="ghost"
@@ -109,6 +122,18 @@ export function Navigation() {
                 {item.label}
               </Link>
             ))}
+            {isAuthenticated && (
+              <Button
+                asChild
+                variant="default"
+                size="sm"
+                className="mt-2 transition-all duration-300"
+              >
+                <Link href="/dashboard" onClick={() => setIsOpen(false)}>
+                  Dashboard
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
       )}

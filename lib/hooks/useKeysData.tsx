@@ -80,7 +80,7 @@ export function useKeysData() {
           setKeys(JSON.parse(savedKeys));
         } else {
           const derivedKeys = normalizedSystems.flatMap(
-            (sys) => sys.productKeys?.keys || [],
+            (sys) => sys?.productKeys?.keys || [],
           );
           setKeys(derivedKeys);
           localStorage.setItem(STORAGE_KEYS.KEYS, JSON.stringify(derivedKeys));
@@ -387,32 +387,12 @@ export function useKeysData() {
 
   // Delete system
   const deleteSystem = useCallback(
-    async (systemId: string, password: string) => {
-      try {
-        const res = await apiRequest("DELETE", `/systems/${systemId}/delete`, {
-          password,
-          userId: user?.id,
-        });
-        if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(errorData?.error || "Failed to delete system");
-        } else {
-          toast({
-            title: "System deleted",
-            description: "The system profile was removed successfully.",
-            variant: "default",
-          });
-          setSystems((prev) => prev.filter((sys) => sys.id !== systemId));
-        }
-      } catch (error) {
-        console.error("Error deleting system:", error);
-        toast({
-          title: "Delete failed",
-          description: "Unable to remove system from the API.",
-          variant: "destructive",
-        });
-      }
+    async (systemId: string, password: string): Promise<boolean> => {
+      // Step 1: Backup current state for rollback
+      const backupSystems = systems;
+      const backupKeys = keys;
 
+      // Step 2: Optimistically update UI immediately
       const updatedSystems = systems.filter((sys) => sys.id !== systemId);
       const updatedKeys = keys.filter((key) => key.systemId !== systemId);
 
@@ -423,8 +403,53 @@ export function useKeysData() {
         JSON.stringify(updatedSystems),
       );
       localStorage.setItem(STORAGE_KEYS.KEYS, JSON.stringify(updatedKeys));
+
+      try {
+        // Step 3: Make API call to correct endpoint
+        const res = await apiRequest("DELETE", `/systems/${systemId}/delete`, {
+          password,
+          userId: user?.id || user?._id || "",
+        });
+
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData?.error || "Failed to delete system");
+        }
+
+        // Step 4: Success - show confirmation toast
+        toast({
+          title: "System deleted",
+          description: "The system profile was removed successfully.",
+          variant: "default",
+        });
+
+        return true;
+      } catch (error) {
+        // Step 5: Error - rollback to backup state
+        console.error("Error deleting system:", error);
+
+        // Restore backup to state
+        setSystems(backupSystems);
+        setKeys(backupKeys);
+
+        // Restore backup to localStorage
+        localStorage.setItem(
+          STORAGE_KEYS.SYSTEMS,
+          JSON.stringify(backupSystems),
+        );
+        localStorage.setItem(STORAGE_KEYS.KEYS, JSON.stringify(backupKeys));
+
+        // Show error toast
+        toast({
+          title: "Deletion failed",
+          description: "System has been restored. Please try again.",
+          variant: "destructive",
+        });
+
+        return false;
+      }
     },
-    [systems, keys],
+    [systems, keys, user?.id],
   );
 
   // Copy to clipboard

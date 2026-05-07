@@ -445,19 +445,12 @@ export default function SystemKeysPage() {
         onConfirm={async (password: string) => {
           setIsDeleting(true);
           try {
-            await deleteSystem(systemId, password);
-            toast({
-              title: "System deleted",
-              description: "The system profile was removed successfully.",
-              variant: "default",
-            });
-            router.push("/dashboard/keys");
+            const success = await deleteSystem(systemId, password);
+            if (success) {
+              router.push("/dashboard/keys");
+            }
           } catch (error) {
-            toast({
-              title: "Delete failed",
-              description: "Unable to delete the system profile.",
-              variant: "destructive",
-            });
+            console.error("Deletion error:", error);
           } finally {
             setIsDeleting(false);
             setIsDeleteOpen(false);
