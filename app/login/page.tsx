@@ -20,7 +20,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isAuthenticated, loading } = useAuth();
+  const { login, isAuthenticated, loading, user } = useAuth();
   const [error, setError] = useState<string | null>(null);
 
   const { register, handleSubmit, formState } = useForm<LoginFormValues>({
@@ -30,7 +30,9 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
-      router.replace("/dashboard");
+      user?.role === "marketing"
+        ? router.replace("/dashboard/keys")
+        : router.replace("/dashboard");
     }
   }, [loading, isAuthenticated, router]);
 
@@ -38,7 +40,9 @@ export default function LoginPage() {
     setError(null);
     try {
       await login(values.username, values.password);
-      router.replace("/dashboard");
+      user?.role === "marketing"
+        ? router.replace("/dashboard/keys")
+        : router.replace("/dashboard");
     } catch (error: any) {
       setError(error?.message || "Login failed");
     }

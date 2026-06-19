@@ -1,19 +1,25 @@
-"use client"
+"use client";
 
-import React from "react"
+import React from "react";
 
-import { useState } from "react"
-import { Plane, Send, SendHorizonal } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { toast } from "@/hooks/use-toast"
-import { apiRequest } from "@/lib/queryClient"
-import { useForm, Controller } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
+import { useState } from "react";
+import { Plane, Send, SendHorizonal } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 
 const projectTypes = [
   { value: "web", label: "Web Development" },
@@ -21,7 +27,7 @@ const projectTypes = [
   { value: "backend", label: "Backend/API" },
   { value: "consulting", label: "Consulting" },
   { value: "other", label: "Other" },
-]
+];
 
 const budgetRanges = [
   { value: "under-5k", label: "Under $5,000" },
@@ -29,7 +35,7 @@ const budgetRanges = [
   { value: "10k-25k", label: "$10,000 - $25,000" },
   { value: "25k-50k", label: "$25,000 - $50,000" },
   { value: "50k-plus", label: "$50,000+" },
-]
+];
 
 const contactSchema = z.object({
   name: z.string().min(2, "Please enter your name"),
@@ -37,14 +43,15 @@ const contactSchema = z.object({
   projectType: z.string().nonempty("Select a project type"),
   budget: z.string().optional(),
   subject: z.string().min(3, "Subject is too short"),
+  type: z.string().default("inquiry"),
   message: z.string().min(10, "Message should be at least 10 characters"),
-})
+});
 
-type FormData = z.infer<typeof contactSchema>
+type FormData = z.infer<typeof contactSchema>;
 
 export function ContactForm() {
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   const {
     register,
@@ -61,28 +68,30 @@ export function ContactForm() {
       budget: "",
       subject: "",
       message: "",
+      type: "inquiry",
     },
-  })
+  });
 
   async function onSubmit(values: FormData) {
-    setIsSubmitting(true)
+    setIsSubmitting(true);
     try {
-      await apiRequest("POST", "/contact/message/create", values)
+      await apiRequest("POST", "/contact/message/create", values);
       toast({
         title: "Message Sent",
-        description: "Thank you for reaching out! I'll get back to you within 24 hours.",
-      })
-      setSubmitted(true)
-      reset()
+        description:
+          "Thank you for reaching out! I'll get back to you within 24 hours.",
+      });
+      setSubmitted(true);
+      reset();
     } catch (error) {
-      console.error(error)
+      console.error(error);
       toast({
         title: "Error",
         description: "Failed to send message. Please try again.",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
   }
 
@@ -104,7 +113,7 @@ export function ContactForm() {
           Send Another Message
         </Button>
       </div>
-    )
+    );
   }
 
   return (
@@ -112,12 +121,10 @@ export function ContactForm() {
       <div className="grid gap-6 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="name">Name</Label>
-          <Input
-            id="name"
-            {...register("name")}
-            placeholder="Your name"
-          />
-          {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+          <Input id="name" {...register("name")} placeholder="Your name" />
+          {errors.name && (
+            <p className="text-sm text-destructive">{errors.name.message}</p>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
@@ -127,7 +134,9 @@ export function ContactForm() {
             type="email"
             placeholder="your@email.com"
           />
-          {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+          {errors.email && (
+            <p className="text-sm text-destructive">{errors.email.message}</p>
+          )}
         </div>
       </div>
 
@@ -152,7 +161,11 @@ export function ContactForm() {
               </Select>
             )}
           />
-          {errors.projectType && <p className="text-sm text-destructive">{errors.projectType.message}</p>}
+          {errors.projectType && (
+            <p className="text-sm text-destructive">
+              {errors.projectType.message}
+            </p>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="budget">Budget Range</Label>
@@ -184,7 +197,9 @@ export function ContactForm() {
           {...register("subject")}
           placeholder="Brief description of your project"
         />
-        {errors.subject && <p className="text-sm text-destructive">{errors.subject.message}</p>}
+        {errors.subject && (
+          <p className="text-sm text-destructive">{errors.subject.message}</p>
+        )}
       </div>
 
       <div className="space-y-2">
@@ -195,12 +210,17 @@ export function ContactForm() {
           placeholder="Tell me about your project, goals, and timeline..."
           rows={6}
         />
-        {errors.message && <p className="text-sm text-destructive">{errors.message.message}</p>}
+        {errors.message && (
+          <p className="text-sm text-destructive">{errors.message.message}</p>
+        )}
       </div>
 
       <Button type="submit" className="w-full gap-2" disabled={isSubmitting}>
         {isSubmitting ? (
-          < > Sending... <SendHorizonal className="h-4 w-4 animate-bounce" /></>
+          <>
+            {" "}
+            Sending... <SendHorizonal className="h-4 w-4 animate-bounce" />
+          </>
         ) : (
           <>
             <Send className="h-4 w-4" />
@@ -210,8 +230,9 @@ export function ContactForm() {
       </Button>
 
       <p className="text-center text-xs text-muted-foreground">
-        By submitting this form, you agree to be contacted regarding your inquiry.
+        By submitting this form, you agree to be contacted regarding your
+        inquiry.
       </p>
     </form>
-  )
+  );
 }

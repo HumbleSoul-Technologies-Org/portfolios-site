@@ -12,6 +12,8 @@ import { apiRequest } from "./queryClient";
 
 type User = {
   username: string;
+  role: string;
+  id: string;
 };
 
 type AuthContextType = {
@@ -19,6 +21,7 @@ type AuthContextType = {
   token: string | null;
   loading: boolean;
   isAuthenticated: boolean;
+  loggingOut: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
@@ -63,6 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const isAuthenticated = useMemo(() => !!user && !!token, [user, token]);
 
@@ -160,28 +164,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    const currentToken = token || loadStoredSession().token;
-    setUser(null);
-    setToken(null);
-    clearSessionStorage();
-
+    setLoggingOut(true);
     try {
-      await apiRequest(
-        "POST",
-        "/auth/logout",
-        undefined,
-        currentToken ?? undefined,
-      );
+      setUser(null);
+      setToken(null);
+      clearSessionStorage();
+      setLoggingOut(false);
+      router.push("/login");
+      await apiRequest("POST", `/auth/${user?.id}/logout`, null);
     } catch (error) {
       console.error("Logout error:", error);
     }
-
-    router.push("/login");
   };
 
   return (
     <AuthContext.Provider
-      value={{ user, token, loading, isAuthenticated, login, logout, refresh }}
+      value={{
+        user,
+        token,
+        loading,
+        isAuthenticated,
+        login,
+        logout,
+        refresh,
+        loggingOut,
+      }}
     >
       {children}
     </AuthContext.Provider>

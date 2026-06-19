@@ -23,13 +23,14 @@ import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/useAuth";
+import { useQuery } from "@tanstack/react-query";
 
 const sidebarLinks = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/dashboard/projects", label: "Projects", icon: FolderKanban },
   { href: "/dashboard/cv", label: "CV", icon: FileText },
   { href: "/dashboard/messages", label: "Messages", icon: MessageSquare },
-  { href: "/dashboard/keys", label: "Keys Management", icon: Key },
+  { href: "/dashboard/keys", label: "Key Management", icon: Key },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
@@ -43,13 +44,24 @@ export default function DashboardLayout({
   const { theme, setTheme } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const { isAuthenticated, loading, logout } = useAuth();
+  const { isAuthenticated, loading, logout, user } = useAuth();
+  const [newMessages, setNewMessages] = useState(0);
+  const { data: Messages } = useQuery<any[]>({
+    queryKey: ["contact", "messages", "all"],
+  });
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       router.replace("/login");
     }
-  }, [loading, isAuthenticated, router]);
+
+    if (Messages) {
+      const notRead = Messages?.data?.messages?.filter(
+        (m: any) => m.read === false,
+      );
+      setNewMessages(notRead?.length || 0);
+    }
+  }, [loading, isAuthenticated, router, Messages]);
 
   if (loading) {
     return (
@@ -91,16 +103,30 @@ export default function DashboardLayout({
           )}
         >
           {!collapsed && (
-            <Link href="/dashboard" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm">
-                YN
-              </div>
-              <span className="font-semibold">Dashboard</span>
-            </Link>
+            <>
+              <Link href="/dashboard" className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-sm">
+                  <img
+                    src="https://images.vexels.com/media/users/3/224169/isolated/lists/dbfe1f493ad01117fa4ec5ba10150e4d-computer-programming-logo.png"
+                    alt="Logo"
+                    className="h-full w-full mx-10 object-contain"
+                  />
+                </div>
+                <span className="font-semibold">
+                  Welcome, <i className="text-sm">{user?.name}</i>
+                </span>
+                <br />
+              </Link>{" "}
+              <br />
+            </>
           )}
           {collapsed && (
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm">
-              YN
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-sm">
+              <img
+                src="https://images.vexels.com/media/users/3/224169/isolated/lists/dbfe1f493ad01117fa4ec5ba10150e4d-computer-programming-logo.png"
+                alt="Logo"
+                className="h-full w-full mx-10 object-contain"
+              />
             </div>
           )}
           <Button
@@ -135,21 +161,47 @@ export default function DashboardLayout({
             const Icon = link.icon;
 
             return (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setSidebarOpen(false)}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                  isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                  collapsed && "justify-center px-2",
+              <>
+                {user?.role === "admin" && (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setSidebarOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                      isActive
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                      collapsed && "justify-center px-2",
+                    )}
+                  >
+                    <Icon className="h-5 w-5 shrink-0" />
+                    {!collapsed && <span>{link.label}</span>}
+                    {link.label === "Messages" &&
+                      newMessages > 0 &&
+                      newMessages}
+                  </Link>
                 )}
-              >
-                <Icon className="h-5 w-5 shrink-0" />
-                {!collapsed && <span>{link.label}</span>}
-              </Link>
+
+                {user?.role === "marketing" &&
+                  link.label === "Keys Management" && (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setSidebarOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 bg-accent/10 text-white rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                        isActive
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                        collapsed && "justify-center px-2",
+                      )}
+                    >
+                      <Icon className="h-5 w-5 shrink-0" />
+                      {!collapsed && <span>{link.label}</span>}
+                    </Link>
+                  )}
+              </>
             );
           })}
         </nav>
@@ -161,17 +213,6 @@ export default function DashboardLayout({
             collapsed ? "flex flex-col items-center gap-2" : "space-y-2",
           )}
         >
-          <Button
-            variant="ghost"
-            size={collapsed ? "icon" : "default"}
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className={cn("w-full", collapsed && "w-auto")}
-          >
-            <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-            {!collapsed && <span className="ml-2">Toggle theme</span>}
-          </Button>
-
           <Button
             variant="ghost"
             size={collapsed ? "icon" : "default"}

@@ -30,7 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Copy, Eye } from "lucide-react";
+import { ArrowLeft, Copy, Eye, Loader, CopyCheck } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import {
   FilterOptions,
@@ -40,6 +40,8 @@ import {
 import { KeyDetailsModal } from "@/components/keys/KeyDetailsModal";
 import { DeleteSystemDialog } from "@/components/keys/DeleteSystemDialog";
 import { useEffect } from "react";
+import { useAuth } from "@/lib/useAuth";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function SystemKeysPage() {
   const params = useParams();
@@ -68,7 +70,8 @@ export default function SystemKeysPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-
+  const [copying, setCopying] = useState<any | null>(null);
+  const { user } = useAuth();
   const system = getSystemById(systemId) || null;
 
   if (isLoading) {
@@ -138,41 +141,58 @@ export default function SystemKeysPage() {
     return keys;
   };
 
+  const handleCopyKey = async (id: string) => {
+    try {
+      await apiRequest("POST", `/auth/${user?.id}/copy-key`, { key: id });
+    } catch (error) {
+      console.error("Copy error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to copy the key. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.push("/dashboard/keys")}
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">{system.name}</h1>
-            <p className="text-muted-foreground mt-1">{system.description}</p>
+      {user?.role === "admin" && (
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.push("/dashboard/keys")}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">
+                {system.name}
+              </h1>
+              <p className="text-muted-foreground mt-1">{system.description}</p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push(`/dashboard/keys/${systemId}/edit`)}
+            >
+              Edit Profile
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setIsDeleteOpen(true)}
+            >
+              Delete Profile
+            </Button>
           </div>
         </div>
-
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.push(`/dashboard/keys/${systemId}/edit`)}
-          >
-            Edit Profile
-          </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => setIsDeleteOpen(true)}
-          >
-            Delete Profile
-          </Button>
-        </div>
-      </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -231,21 +251,16 @@ export default function SystemKeysPage() {
       </div>
 
       {/* Key Creation Form */}
-      <KeyCreationForm
-        systemId={systemId}
-        isLoading={isLoading}
-        generateKeys={generateKeys}
-        onKeysGenerated={(count) => {
-          toast({
-            title: "Success!",
-            description: `${count} new key${count > 1 ? "s" : ""} generated successfully`,
-            variant: "default",
-          });
-        }}
-      />
+      {user?.role === "admin" && (
+        <KeyCreationForm
+          systemId={systemId}
+          isLoading={isLoading}
+          generateKeys={generateKeys}
+        />
+      )}
 
       {/* Filters and Actions */}
-      <Card>
+      <Card className="border max-h-screen overflow-hidden">
         <CardHeader>
           <CardTitle>Keys</CardTitle>
         </CardHeader>
@@ -340,7 +355,7 @@ export default function SystemKeysPage() {
                     <TableHead className="w-1/6">Status</TableHead>
                     <TableHead className="w-1/6">Price</TableHead>
                     <TableHead className="w-1/4">Purchased By</TableHead>
-                    <TableHead className="w-1/6">Purchase Date</TableHead>
+                    <TableHead className="w-1/6">Activate Date</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -368,27 +383,50 @@ export default function SystemKeysPage() {
                       <TableCell className="text-sm">
                         {key.status === "used" ? (
                           <div>
-                            <p className="font-medium">{key.purchasedBy}</p>
+                            <p className="font-medium">
+                              <a
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="underline text-accent hover:text-accent/80"
+                                href={`mailto:${key.purchasedBy}`}
+                              >
+                                {key.purchasedBy || "N/A"}
+                              </a>
+                            </p>
                           </div>
                         ) : (
                           <p className="text-muted-foreground">-</p>
                         )}
                       </TableCell>
                       <TableCell className="text-sm">
-                        {key.purchasedOn
-                          ? new Date(key.purchasedOn).toLocaleDateString()
+                        {key.activatedAt
+                          ? new Date(key.activatedAt).toLocaleDateString()
                           : "-"}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => copyToClipboard(key.key)}
-                            title="Copy key"
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
+                          {key.status === "unused" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={async () => {
+                                setCopying(key.key);
+                                try {
+                                  await handleCopyKey(key.key);
+                                  copyToClipboard(key.key);
+                                } finally {
+                                  setCopying(null);
+                                }
+                              }}
+                              title="Copy key"
+                            >
+                              {copying === key.key ? (
+                                <Loader className="loading loading-spinner animate-spin" />
+                              ) : (
+                                <Copy className="h-4 w-4" />
+                              )}
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"
@@ -425,11 +463,18 @@ export default function SystemKeysPage() {
             markKeyAsUsed(input);
           }}
           onCopyKey={async (keyId: string) => {
-            const success = await copyToClipboard(keyId);
-            if (!success) {
-              throw new Error("Failed to copy");
+            setCopying(keyId);
+            try {
+              await handleCopyKey(keyId);
+              const success = await copyToClipboard(keyId);
+              if (!success) {
+                throw new Error("Failed to copy");
+              }
+            } finally {
+              setCopying(null);
             }
           }}
+          isCopying={!!copying}
         />
       )}
 

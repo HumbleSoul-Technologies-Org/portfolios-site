@@ -14,10 +14,12 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useKeysData } from "@/lib/hooks/useKeysData";
 import { Plus, Package, Key } from "lucide-react";
+import { useAuth } from "@/lib/useAuth";
 
 export default function KeysPage() {
   const router = useRouter();
   const { systems, isLoading } = useKeysData();
+  const { user } = useAuth();
 
   const handleCreateSystem = () => {
     router.push("/dashboard/keys/create-system");
@@ -64,13 +66,13 @@ export default function KeysPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Keys Management</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Key Management</h1>
           <p className="text-muted-foreground mt-2">
             Manage your system profiles and generate primary keys for
             distribution
           </p>
         </div>
-        {systems.length > 0 && (
+        {user?.role === "admin" && systems.length > 0 && (
           <Button onClick={handleCreateSystem} className="gap-2">
             <Plus className="h-4 w-4" />
             Create System
@@ -80,18 +82,20 @@ export default function KeysPage() {
 
       {/* Systems Grid */}
       {systems.length === 0 ? (
-        <Card className="border-dashed h-screen flex items-center justify-center">
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Package className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="font-semibold mb-2">No systems yet</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Create your first system profile to start generating keys
-            </p>
-            <Button onClick={handleCreateSystem} variant="outline">
-              Create System
-            </Button>
-          </CardContent>
-        </Card>
+        user?.role === "admin" && (
+          <Card className="border-dashed h-screen flex items-center justify-center">
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <Package className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="font-semibold mb-2">No systems yet</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Create your first system profile to start generating keys
+              </p>
+              <Button onClick={handleCreateSystem} variant="outline">
+                Create System
+              </Button>
+            </CardContent>
+          </Card>
+        )
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {systems.map((system) => (
@@ -126,6 +130,7 @@ export default function KeysPage() {
                     <p className="text-muted-foreground">Version</p>
                     <p className="font-semibold">{system.latestVersion}</p>
                   </div>
+
                   <div>
                     <p className="text-muted-foreground flex items-center gap-1">
                       Keys <Key />
