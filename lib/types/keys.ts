@@ -2,19 +2,29 @@
  * Types and interfaces for Product Keys Management feature
  */
 
+export interface SystemTier {
+  _id?: string;
+  name: string;
+  level: number;
+  features?: string;
+  pricePerKey?: number;
+  isActive?: boolean;
+}
+
 export interface SystemProfile {
-    id?: string;
-    _id?: string;
+  id?: string;
+  _id?: string;
   name: string;
   description: string;
   image: string;
   link: string;
   latestVersion: string;
-    numberOfBusinesses: number;
-    productKeys?: ProductKeysContainer | ProductKey[];
+  numberOfBusinesses: number;
+  productKeys?: ProductKeysContainer | ProductKey[];
+  tiers?: SystemTier[];
   createdAt?: Date;
-    lastUpdatedAt?: Date;
-    updatedAt?: Date;
+  lastUpdatedAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface ProductKeysContainer {
@@ -25,6 +35,9 @@ export interface ProductKey {
   systemId: string;
   key: string; // The UUID key
   status: "used" | "unused";
+  tierId?: string;
+  tierName?: string;
+  tierLevel?: number;
   price: number; // Price of the key in USD
   activated: boolean;
   activatedAt?: Date;
@@ -58,6 +71,9 @@ export interface CreateKeyInput {
   systemId: string;
   count: number;
   price: number; // Price per key in USD
+  tierId?: string;
+  tierLevel?: number;
+  tierName?: string;
 }
 
 export interface MarkKeyAsUsedInput {

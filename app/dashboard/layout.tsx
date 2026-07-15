@@ -161,7 +161,7 @@ export default function DashboardLayout({
             const Icon = link.icon;
 
             return (
-              <>
+              <div key={link.href} className="relative">
                 {user?.role === "admin" && (
                   <Link
                     key={link.href}
@@ -201,7 +201,7 @@ export default function DashboardLayout({
                       {!collapsed && <span>{link.label}</span>}
                     </Link>
                   )}
-              </>
+              </div>
             );
           })}
         </nav>

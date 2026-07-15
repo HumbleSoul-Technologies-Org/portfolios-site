@@ -14,9 +14,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ProductKey } from "@/lib/types/keys";
+import { ProductKey, SystemTier } from "@/lib/types/keys";
 import { toast } from "@/hooks/use-toast";
 import { Plus, Loader2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const createKeySchema = z.object({
   count: z
@@ -33,11 +40,13 @@ type CreateKeyFormValues = z.infer<typeof createKeySchema>;
 
 interface KeyCreationFormProps {
   systemId: string;
+  tiers?: SystemTier[];
   onKeysGenerated?: (count: number) => void;
   generateKeys: (
     systemId: string,
     count: number,
     price: number,
+    tier?: SystemTier,
   ) => Promise<ProductKey[]>;
   isLoading?: boolean;
 }
@@ -45,12 +54,33 @@ interface KeyCreationFormProps {
 export function KeyCreationForm({
   isLoading,
   systemId,
+  tiers = [],
   onKeysGenerated,
   generateKeys,
 }: KeyCreationFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(isLoading || false);
+  const [selectedTier, setSelectedTier] = useState<SystemTier | undefined>(
+    tiers[0],
+  );
 
-  const { register, handleSubmit, formState, reset } =
+  React.useEffect(() => {
+    if (tiers.length === 0) {
+      setSelectedTier(undefined);
+      return;
+    }
+
+    const isStillValid = tiers.some(
+      (tier) =>
+        (tier._id && selectedTier?._id && tier._id === selectedTier._id) ||
+        (!tier._id && selectedTier?.name && tier.name === selectedTier.name),
+    );
+
+    if (!selectedTier || !isStillValid) {
+      setSelectedTier(tiers[0]);
+    }
+  }, [selectedTier, tiers]);
+
+  const { register, handleSubmit, formState, reset, setValue } =
     useForm<CreateKeyFormValues>({
       resolver: zodResolver(createKeySchema),
       defaultValues: {
@@ -62,7 +92,7 @@ export function KeyCreationForm({
   const onSubmit = async (values: CreateKeyFormValues) => {
     setIsSubmitting(true);
     try {
-      await generateKeys(systemId, values.count, values.price);
+      await generateKeys(systemId, values.count, values.price, selectedTier);
 
       toast({
         title: "Keys Generated!",
@@ -70,7 +100,7 @@ export function KeyCreationForm({
         variant: "default",
       });
 
-      reset();
+      reset({ count: 1, price: 0 });
       onKeysGenerated?.(values.count);
     } catch (error) {
       toast({
@@ -97,7 +127,41 @@ export function KeyCreationForm({
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="tier">Tier</Label>
+              <Select
+                value={selectedTier?._id || selectedTier?.name || ""}
+                onValueChange={(value) => {
+                  const tier = tiers.find(
+                    (item) => item._id === value || item.name === value,
+                  );
+                  setSelectedTier(tier);
+                  if (tier?.pricePerKey !== undefined) {
+                    setValue("price", tier.pricePerKey ?? 0);
+                  }
+                }}
+                disabled={isSubmitting}
+              >
+                <SelectTrigger id="tier">
+                  <SelectValue placeholder="Select tier" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tiers.length > 0 ? (
+                    tiers.map((tier) => (
+                      <SelectItem
+                        key={tier._id || tier.name}
+                        value={tier._id || tier.name}
+                      >
+                        {tier.name} (Level {tier.level})
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="none">No tiers available</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="count">Number of Keys</Label>
               <Input
@@ -114,9 +178,6 @@ export function KeyCreationForm({
                 </p>
               )}
             </div>
-
-
-           
 
             <div className="space-y-2">
               <Label htmlFor="price">Price per Key (UGX)</Label>

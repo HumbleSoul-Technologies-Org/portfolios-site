@@ -30,12 +30,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Copy, Eye, Loader, CopyCheck } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import {
   FilterOptions,
   ProductKey,
   MarkKeyAsUsedInput,
+  SystemTier,
 } from "@/lib/types/keys";
 import { KeyDetailsModal } from "@/components/keys/KeyDetailsModal";
 import { DeleteSystemDialog } from "@/components/keys/DeleteSystemDialog";
@@ -54,6 +56,9 @@ export default function SystemKeysPage() {
     // filterKeys,
     copyToClipboard,
     generateKeys,
+    createTier,
+    updateTier,
+    deleteTier,
     markKeyAsUsed,
     deleteSystem,
     getSystemStats,
@@ -71,8 +76,32 @@ export default function SystemKeysPage() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [copying, setCopying] = useState<any | null>(null);
+  const [tierName, setTierName] = useState("");
+  const [tierLevel, setTierLevel] = useState(1);
+  const [tierFeatures, setTierFeatures] = useState("");
+  const [tierPrice, setTierPrice] = useState(0);
+  const [isCreatingTier, setIsCreatingTier] = useState(false);
+  const [editingTierId, setEditingTierId] = useState<string | null>(null);
+  const [editingTierName, setEditingTierName] = useState("");
+  const [editingTierLevel, setEditingTierLevel] = useState(1);
+  const [editingTierFeatures, setEditingTierFeatures] = useState("");
+  const [editingTierPrice, setEditingTierPrice] = useState(0);
+  const [isUpdatingTier, setIsUpdatingTier] = useState(false);
+  const [isDeletingTier, setIsDeletingTier] = useState<string | null>(null);
+  const [activeTierTab, setActiveTierTab] = useState<string>("all");
   const { user } = useAuth();
   const system = getSystemById(systemId) || null;
+
+  React.useEffect(() => {
+    if (activeTierTab !== "all") {
+      const exists = (system?.tiers || []).some(
+        (tier: SystemTier) => (tier._id || tier.name) === activeTierTab,
+      );
+      if (!exists) {
+        setActiveTierTab("all");
+      }
+    }
+  }, [activeTierTab, system?.tiers]);
 
   if (isLoading) {
     return (
@@ -98,18 +127,46 @@ export default function SystemKeysPage() {
     );
   }
 
-  const totalKeys = system?.productKeys?.keys?.length || 0;
+  const keyList = Array.isArray(system?.productKeys?.keys)
+    ? system.productKeys.keys
+    : [];
 
-  const usedKeys =
-    system?.productKeys?.keys?.filter((k: any) => k.status === "used").length ||
-    0;
+  const totalKeys = keyList.length;
+
+  const usedKeys = keyList.filter((k: any) => k.status === "used").length;
   const unusedKeys = totalKeys - usedKeys || 0;
 
   const usedPercentage =
     totalKeys > 0 ? Math.round((usedKeys / totalKeys) * 100) : 0;
 
+  const tierTabs = [
+    {
+      id: "all",
+      label: "All",
+      count: keyList.length,
+      usedCount: usedKeys,
+      unusedCount: unusedKeys,
+    },
+    ...(system?.tiers || []).map((tier: SystemTier) => {
+      const tierKeys = keyList.filter(
+        (key: ProductKey) =>
+          key.tierId === (tier._id || "") || key.tierName === tier.name,
+      );
+      const usedCount = tierKeys.filter((key) => key.status === "used").length;
+      const unusedCount = tierKeys.length - usedCount;
+
+      return {
+        id: tier._id || tier.name,
+        label: tier.name,
+        count: tierKeys.length,
+        usedCount,
+        unusedCount,
+      };
+    }),
+  ];
+
   const filteredKeys = () => {
-    let keys = system?.productKeys?.keys || [];
+    let keys: ProductKey[] = keyList;
     for (const [key, value] of Object.entries(filters)) {
       if (value && value !== "all") {
         if (key === "searchText") {
@@ -132,6 +189,18 @@ export default function SystemKeysPage() {
         }
       }
     }
+
+    if (activeTierTab !== "all") {
+      const selectedTier = (system?.tiers || []).find(
+        (tier: SystemTier) => (tier._id || tier.name) === activeTierTab,
+      );
+      keys = keys.filter(
+        (key: ProductKey) =>
+          key.tierId === (selectedTier?._id || "") ||
+          key.tierName === selectedTier?.name,
+      );
+    }
+
     // Sort to show unused keys first
     keys = (keys as any).sort((a: any, b: any) => {
       if (a.status === "unused" && b.status === "used") return -1;
@@ -140,6 +209,8 @@ export default function SystemKeysPage() {
     });
     return keys;
   };
+
+  const visibleKeys = filteredKeys();
 
   const handleCopyKey = async (id: string) => {
     try {
@@ -151,6 +222,95 @@ export default function SystemKeysPage() {
         description: "Failed to copy the key. Please try again.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleCreateTier = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tierName.trim()) {
+      toast({
+        title: "Tier name required",
+        description: "Please enter a tier name.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsCreatingTier(true);
+    try {
+      await createTier(systemId, {
+        name: tierName.trim(),
+        level: tierLevel,
+        features: tierFeatures.trim(),
+        pricePerKey: tierPrice,
+        isActive: true,
+      });
+      setTierName("");
+      setTierLevel(1);
+      setTierFeatures("");
+      setTierPrice(0);
+      toast({
+        title: "Tier created",
+        description: "The tier has been added to this system.",
+        variant: "default",
+      });
+    } finally {
+      setIsCreatingTier(false);
+    }
+  };
+
+  const startEditingTier = (tier: SystemTier) => {
+    setEditingTierId(tier._id || tier.name);
+    setEditingTierName(tier.name || "");
+    setEditingTierLevel(tier.level || 1);
+    setEditingTierFeatures(tier.features || "");
+    setEditingTierPrice(Number(tier.pricePerKey || 0));
+  };
+
+  const handleUpdateTier = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTierId || !editingTierName.trim()) {
+      toast({
+        title: "Tier name required",
+        description: "Please enter a tier name.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUpdatingTier(true);
+    try {
+      await updateTier(systemId, editingTierId, {
+        name: editingTierName.trim(),
+        level: editingTierLevel,
+        features: editingTierFeatures.trim(),
+        pricePerKey: editingTierPrice,
+        isActive: true,
+      });
+      setEditingTierId(null);
+      toast({
+        title: "Tier updated",
+        description: "The tier details have been saved.",
+        variant: "default",
+      });
+    } finally {
+      setIsUpdatingTier(false);
+    }
+  };
+
+  const handleDeleteTier = async (tierId: string) => {
+    setIsDeletingTier(tierId);
+    try {
+      const didDelete = await deleteTier(systemId, tierId);
+      if (didDelete) {
+        toast({
+          title: "Tier deleted",
+          description: "The tier has been removed from this system.",
+          variant: "default",
+        });
+      }
+    } finally {
+      setIsDeletingTier(null);
     }
   };
 
@@ -238,8 +398,8 @@ export default function SystemKeysPage() {
           <CardContent>
             <div className="text-2xl font-bold">
               Ugx{" "}
-              {system?.productKeys?.keys
-                ?.filter((k: any) => k.status === "used")
+              {keyList
+                .filter((k: any) => k.status === "used")
                 .reduce((sum: number, key: any) => sum + (key.price || 0), 0)
                 .toLocaleString() || "0"}
             </div>
@@ -252,11 +412,221 @@ export default function SystemKeysPage() {
 
       {/* Key Creation Form */}
       {user?.role === "admin" && (
-        <KeyCreationForm
-          systemId={systemId}
-          isLoading={isLoading}
-          generateKeys={generateKeys}
-        />
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle>Create Tier</CardTitle>
+              <CardDescription>
+                Add a custom tier for this system. Each tier can have a level,
+                features, and a default price per key.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form
+                onSubmit={handleCreateTier}
+                className="grid grid-cols-1 gap-4 md:grid-cols-4"
+              >
+                <div className="space-y-2">
+                  <Label htmlFor="tier-name">Tier Name</Label>
+                  <Input
+                    id="tier-name"
+                    value={tierName}
+                    onChange={(e) => setTierName(e.target.value)}
+                    placeholder="e.g. Premium"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="tier-level">Tier Level</Label>
+                  <Input
+                    id="tier-level"
+                    type="number"
+                    min="1"
+                    value={tierLevel}
+                    onChange={(e) => setTierLevel(Number(e.target.value))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="tier-features">Features</Label>
+                  <Input
+                    id="tier-features"
+                    value={tierFeatures}
+                    onChange={(e) => setTierFeatures(e.target.value)}
+                    placeholder="Short description"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="tier-price">Default Price</Label>
+                  <Input
+                    id="tier-price"
+                    type="number"
+                    min="0"
+                    value={tierPrice}
+                    onChange={(e) => setTierPrice(Number(e.target.value))}
+                  />
+                </div>
+                <div className="md:col-span-4">
+                  <Button type="submit" disabled={isCreatingTier}>
+                    {isCreatingTier ? "Creating..." : "Create Tier"}
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Configured Tiers</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {!(system?.tiers && system.tiers.length > 0) ? (
+                <p className="text-sm text-muted-foreground">
+                  No tiers created yet for this system.
+                </p>
+              ) : (
+                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                  {(system.tiers || []).map(
+                    (tier: SystemTier, index: number) => {
+                      const isEditing =
+                        editingTierId === (tier._id || tier.name);
+                      return (
+                        <div
+                          key={tier._id || `${tier.name}-${index}`}
+                          className="rounded-lg border p-4"
+                        >
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-semibold">{tier.name}</h3>
+                            <Badge variant="outline">Level {tier.level}</Badge>
+                          </div>
+                          <p className="mt-2 text-sm text-muted-foreground">
+                            {tier.features || "No features provided"}
+                          </p>
+                          <p className="mt-3 text-sm font-medium">
+                            Default price: Ugx{" "}
+                            {Number(tier.pricePerKey || 0).toLocaleString()}
+                          </p>
+                          <div className="mt-4 flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => startEditingTier(tier)}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() =>
+                                handleDeleteTier(tier._id || tier.name)
+                              }
+                              disabled={
+                                isDeletingTier === (tier._id || tier.name)
+                              }
+                            >
+                              {isDeletingTier === (tier._id || tier.name)
+                                ? "Deleting..."
+                                : "Delete"}
+                            </Button>
+                          </div>
+                          {isEditing && (
+                            <form
+                              onSubmit={handleUpdateTier}
+                              className="mt-4 space-y-3 rounded-lg border bg-muted/20 p-3"
+                            >
+                              <div className="space-y-2">
+                                <Label
+                                  htmlFor={`edit-tier-name-${tier._id || tier.name}`}
+                                >
+                                  Tier Name
+                                </Label>
+                                <Input
+                                  id={`edit-tier-name-${tier._id || tier.name}`}
+                                  value={editingTierName}
+                                  onChange={(e) =>
+                                    setEditingTierName(e.target.value)
+                                  }
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label
+                                  htmlFor={`edit-tier-level-${tier._id || tier.name}`}
+                                >
+                                  Tier Level
+                                </Label>
+                                <Input
+                                  id={`edit-tier-level-${tier._id || tier.name}`}
+                                  type="number"
+                                  min="1"
+                                  value={editingTierLevel}
+                                  onChange={(e) =>
+                                    setEditingTierLevel(Number(e.target.value))
+                                  }
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label
+                                  htmlFor={`edit-tier-features-${tier._id || tier.name}`}
+                                >
+                                  Features
+                                </Label>
+                                <Input
+                                  id={`edit-tier-features-${tier._id || tier.name}`}
+                                  value={editingTierFeatures}
+                                  onChange={(e) =>
+                                    setEditingTierFeatures(e.target.value)
+                                  }
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label
+                                  htmlFor={`edit-tier-price-${tier._id || tier.name}`}
+                                >
+                                  Default Price
+                                </Label>
+                                <Input
+                                  id={`edit-tier-price-${tier._id || tier.name}`}
+                                  type="number"
+                                  min="0"
+                                  value={editingTierPrice}
+                                  onChange={(e) =>
+                                    setEditingTierPrice(Number(e.target.value))
+                                  }
+                                />
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  type="submit"
+                                  size="sm"
+                                  disabled={isUpdatingTier}
+                                >
+                                  {isUpdatingTier ? "Saving..." : "Save"}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setEditingTierId(null)}
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            </form>
+                          )}
+                        </div>
+                      );
+                    },
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <KeyCreationForm
+            systemId={systemId}
+            tiers={system?.tiers || []}
+            isLoading={isLoading}
+            generateKeys={generateKeys}
+          />
+        </>
       )}
 
       {/* Filters and Actions */}
@@ -265,6 +635,25 @@ export default function SystemKeysPage() {
           <CardTitle>Keys</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <Tabs
+            value={activeTierTab}
+            onValueChange={setActiveTierTab}
+            className="w-full "
+          >
+            <TabsList className="grid h-auto w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              {tierTabs.map((tab) => (
+                <TabsTrigger
+                  key={tab.id}
+                  value={tab.id}
+                  className="w-full justify-center whitespace-normal"
+                >
+                  {tab.label} ({tab.count}) · {tab.usedCount || 0} used /{" "}
+                  {tab.unusedCount || 0} unused
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+
           {/* Filters */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="space-y-2">
@@ -301,6 +690,7 @@ export default function SystemKeysPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="dateFrom">From Date</Label>
+
               <Input
                 id="dateFrom"
                 type="date"
@@ -342,31 +732,38 @@ export default function SystemKeysPage() {
           </div>
 
           {/* Keys Table */}
-          {filteredKeys().length === 0 ? (
+          {visibleKeys.length === 0 ? (
             <div className="flex items-center justify-center py-8">
               <p className="text-muted-foreground">No keys found</p>
             </div>
           ) : (
-            <div className="border max-h-screen h-screen overflow-y-auto rounded-lg overflow-hidden">
+            <div className="border h-screen rounded-lg  ">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-1/4">Key ID</TableHead>
+                    <TableHead className="w-1/5">Key ID</TableHead>
+                    <TableHead className="w-1/6">Tier</TableHead>
                     <TableHead className="w-1/6">Status</TableHead>
                     <TableHead className="w-1/6">Price</TableHead>
-                    <TableHead className="w-1/4">Purchased By</TableHead>
+                    <TableHead className="w-1/5">Purchased By</TableHead>
                     <TableHead className="w-1/6">Activate Date</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody className="">
-                  {filteredKeys()?.map((key: any, index: number) => (
+                <TableBody className="auto  overflow-y-hidden">
+                  {visibleKeys?.map((key: any, index: number) => (
                     <TableRow
                       key={key.key || index}
                       className="hover:bg-muted/50"
                     >
                       <TableCell className="font-mono text-xs break-all">
                         {key.key || index}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">
+                          {key.tierName || "Unassigned"}
+                          {key.tierLevel ? ` · L${key.tierLevel}` : ""}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         <Badge

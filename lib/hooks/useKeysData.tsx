@@ -9,6 +9,7 @@ import {
   CreateSystemInput,
   MarkKeyAsUsedInput,
   KeysStats,
+  SystemTier,
 } from "@/lib/types/keys";
 import { apiRequest } from "../queryClient";
 import { toast } from "@/hooks/use-toast";
@@ -125,6 +126,7 @@ export function useKeysData() {
       systemId: string,
       count: number,
       price: number = 0,
+      tier?: SystemTier,
     ): Promise<ProductKey[]> => {
       const newKeys: ProductKey[] = [];
 
@@ -136,7 +138,10 @@ export function useKeysData() {
           key: formattedId,
           systemId,
           status: "unused",
-          price,
+          tierId: tier?._id || "",
+          tierName: tier?.name || "",
+          tierLevel: tier?.level || 1,
+          price: price || tier?.pricePerKey || 0,
           activated: false,
           purchasedBy: "",
         });
@@ -198,18 +203,194 @@ export function useKeysData() {
           );
           localStorage.setItem(STORAGE_KEYS.KEYS, JSON.stringify(updatedKeys));
         }
-      } catch (error) {
-        console.log("====================================");
-        console.log(error);
-        console.log("====================================");
-        toast({
-          title: "Key generation failed",
-          description: "Unable to sync generated keys with the API.",
-          variant: "destructive",
-        });
-      }
+      } catch (error) {}
 
       return newKeys;
+    },
+    [systems],
+  );
+
+  const createTier = useCallback(
+    async (systemId: string, payload: Partial<SystemTier>) => {
+      const newTier: SystemTier = {
+        name: payload.name || "",
+        level: payload.level || 1,
+        features: payload.features || "",
+        pricePerKey: payload.pricePerKey || 0,
+        isActive: payload.isActive !== false,
+      };
+
+      const updatedSystems = systems.map((sys) => {
+        if (sys.id !== systemId && sys._id !== systemId) {
+          return sys;
+        }
+
+        return {
+          ...sys,
+          tiers: [...(sys.tiers || []), newTier],
+        };
+      });
+
+      setSystems(updatedSystems);
+      localStorage.setItem(
+        STORAGE_KEYS.SYSTEMS,
+        JSON.stringify(updatedSystems),
+      );
+
+      try {
+        const res = await apiRequest(
+          "POST",
+          `/systems/${systemId}/tiers`,
+          newTier,
+        );
+        if (!res.ok) {
+          throw new Error("Unable to save tier");
+        }
+
+        const savedTier = await res.json();
+        const syncedSystems = updatedSystems.map((sys) => {
+          if (sys.id !== systemId && sys._id !== systemId) {
+            return sys;
+          }
+
+          return {
+            ...sys,
+            tiers: (sys.tiers || []).map((tier) => {
+              if (tier.name === newTier.name && tier.level === newTier.level) {
+                return { ...tier, ...savedTier };
+              }
+              return tier;
+            }),
+          };
+        });
+
+        setSystems(syncedSystems);
+        localStorage.setItem(
+          STORAGE_KEYS.SYSTEMS,
+          JSON.stringify(syncedSystems),
+        );
+        return savedTier as SystemTier;
+      } catch (error) {
+        console.error("Error creating tier:", error);
+        toast({
+          title: "Tier creation failed",
+          description: "Unable to save the tier to the API.",
+          variant: "destructive",
+        });
+        return newTier;
+      }
+    },
+    [systems],
+  );
+
+  const updateTier = useCallback(
+    async (systemId: string, tierId: string, payload: Partial<SystemTier>) => {
+      const updatedSystems = systems.map((sys) => {
+        if (sys.id !== systemId && sys._id !== systemId) {
+          return sys;
+        }
+
+        return {
+          ...sys,
+          tiers: (sys.tiers || []).map((tier) =>
+            tier._id === tierId || tier.name === tierId
+              ? { ...tier, ...payload }
+              : tier,
+          ),
+        };
+      });
+
+      setSystems(updatedSystems);
+      localStorage.setItem(
+        STORAGE_KEYS.SYSTEMS,
+        JSON.stringify(updatedSystems),
+      );
+
+      try {
+        const res = await apiRequest(
+          "PUT",
+          `/systems/${systemId}/tiers/${tierId}`,
+          payload,
+        );
+        if (!res.ok) {
+          throw new Error("Unable to update tier");
+        }
+
+        const savedTier = await res.json();
+        const syncedSystems = updatedSystems.map((sys) => {
+          if (sys.id !== systemId && sys._id !== systemId) {
+            return sys;
+          }
+
+          return {
+            ...sys,
+            tiers: (sys.tiers || []).map((tier) =>
+              tier._id === tierId || tier.name === tierId
+                ? { ...tier, ...savedTier }
+                : tier,
+            ),
+          };
+        });
+
+        setSystems(syncedSystems);
+        localStorage.setItem(
+          STORAGE_KEYS.SYSTEMS,
+          JSON.stringify(syncedSystems),
+        );
+        return savedTier as SystemTier;
+      } catch (error) {
+        console.error("Error updating tier:", error);
+        toast({
+          title: "Tier update failed",
+          description: "Unable to save the tier changes to the API.",
+          variant: "destructive",
+        });
+        return payload as SystemTier;
+      }
+    },
+    [systems],
+  );
+
+  const deleteTier = useCallback(
+    async (systemId: string, tierId: string) => {
+      const updatedSystems = systems.map((sys) => {
+        if (sys.id !== systemId && sys._id !== systemId) {
+          return sys;
+        }
+
+        return {
+          ...sys,
+          tiers: (sys.tiers || []).filter(
+            (tier) => tier._id !== tierId && tier.name !== tierId,
+          ),
+        };
+      });
+
+      setSystems(updatedSystems);
+      localStorage.setItem(
+        STORAGE_KEYS.SYSTEMS,
+        JSON.stringify(updatedSystems),
+      );
+
+      try {
+        const res = await apiRequest(
+          "DELETE",
+          `/systems/${systemId}/tiers/${tierId}`,
+        );
+        if (!res.ok) {
+          throw new Error("Unable to delete tier");
+        }
+
+        return true;
+      } catch (error) {
+        console.error("Error deleting tier:", error);
+        toast({
+          title: "Tier deletion failed",
+          description: "Unable to remove the tier from the API.",
+          variant: "destructive",
+        });
+        return false;
+      }
     },
     [systems],
   );
@@ -487,6 +668,9 @@ export function useKeysData() {
     // Key methods
     getSystemKeys,
     generateKeys,
+    createTier,
+    updateTier,
+    deleteTier,
     markKeyAsUsed,
     getSystemStats,
     // Utilities
